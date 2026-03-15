@@ -38,7 +38,7 @@ connections:
     password: "devpass"          # Required: Database password (matches docker-compose)
     database: "customerdb"       # Required: Database name
     sslmode: "disable"           # Options: disable, require, verify-ca, verify-full
-    target_schema: "daana_dw"    # Optional: Schema for transformed data
+    target_schema: "dab"    # Optional: Schema for transformed data
     # Optional connection settings:
     # connect_timeout: 15
     # application_name: "daana-Northwind"
