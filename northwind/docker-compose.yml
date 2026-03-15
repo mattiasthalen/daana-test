@@ -36,6 +36,7 @@ services:
       - "5432:5432"
     volumes:
       - daana-customer-data:/var/lib/postgresql/data
+      - ./init-northwind.sql:/docker-entrypoint-initdb.d/init-northwind.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dev -d customerdb"]
       interval: 5s
