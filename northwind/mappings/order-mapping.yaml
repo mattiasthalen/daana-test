@@ -50,10 +50,10 @@ mapping_groups:
             transformation_expression: "ship_country"
 
     relationships:
-      - id: "IS_PLACED_BY"
+      - id: "ORDER_IS_PLACED_BY_CUSTOMER"
         source_table: "das.orders"
         target_transformation_expression: "customer_id"
 
-      - id: "IS_HANDLED_BY"
+      - id: "ORDER_IS_HANDLED_BY_EMPLOYEE"
         source_table: "das.orders"
         target_transformation_expression: "CAST(employee_id AS VARCHAR)"

@@ -16,7 +16,7 @@ mapping_groups:
         entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
 
         attributes:
-          - id: "UNIT_PRICE"
+          - id: "ORDER_LINE_UNIT_PRICE"
             transformation_expression: "unit_price"
 
           - id: "QUANTITY"
@@ -26,10 +26,10 @@ mapping_groups:
             transformation_expression: "discount"
 
     relationships:
-      - id: "BELONGS_TO"
+      - id: "ORDER_LINE_BELONGS_TO_ORDER"
         source_table: "das.order_details"
         target_transformation_expression: "CAST(order_id AS VARCHAR)"
 
-      - id: "REFERS_TO"
+      - id: "ORDER_LINE_REFERS_TO_PRODUCT"
         source_table: "das.order_details"
         target_transformation_expression: "CAST(product_id AS VARCHAR)"

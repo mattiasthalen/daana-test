@@ -33,32 +33,32 @@ model:
           type: "STRING"
           effective_timestamp: true
 
-        - id: "ADDRESS"
-          name: "ADDRESS"
+        - id: "CUSTOMER_ADDRESS"
+          name: "CUSTOMER_ADDRESS"
           definition: "Street address of the customer"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "CITY"
-          name: "CITY"
+        - id: "CUSTOMER_CITY"
+          name: "CUSTOMER_CITY"
           definition: "City where the customer is located"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "REGION"
-          name: "REGION"
+        - id: "CUSTOMER_REGION"
+          name: "CUSTOMER_REGION"
           definition: "Region or state of the customer"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "POSTAL_CODE"
-          name: "POSTAL_CODE"
+        - id: "CUSTOMER_POSTAL_CODE"
+          name: "CUSTOMER_POSTAL_CODE"
           definition: "Postal code of the customer"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "COUNTRY"
-          name: "COUNTRY"
+        - id: "CUSTOMER_COUNTRY"
+          name: "CUSTOMER_COUNTRY"
           definition: "Country where the customer is located"
           type: "STRING"
           effective_timestamp: true
@@ -119,14 +119,14 @@ model:
           definition: "Date the employee was hired"
           type: "START_TIMESTAMP"
 
-        - id: "ADDRESS"
-          name: "ADDRESS"
+        - id: "EMPLOYEE_ADDRESS"
+          name: "EMPLOYEE_ADDRESS"
           definition: "Employee street address"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "CITY"
-          name: "CITY"
+        - id: "EMPLOYEE_CITY"
+          name: "EMPLOYEE_CITY"
           definition: "City where the employee lives"
           type: "STRING"
           effective_timestamp: true
@@ -137,14 +137,14 @@ model:
           type: "STRING"
           effective_timestamp: true
 
-        - id: "POSTAL_CODE"
-          name: "POSTAL_CODE"
+        - id: "EMPLOYEE_POSTAL_CODE"
+          name: "EMPLOYEE_POSTAL_CODE"
           definition: "Postal code of the employee"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "COUNTRY"
-          name: "COUNTRY"
+        - id: "EMPLOYEE_COUNTRY"
+          name: "EMPLOYEE_COUNTRY"
           definition: "Country where the employee lives"
           type: "STRING"
           effective_timestamp: true
@@ -245,8 +245,8 @@ model:
       definition: "A line item within an order"
       description: "Represents a single product entry in an order with quantity and pricing"
       attributes:
-        - id: "UNIT_PRICE"
-          name: "UNIT_PRICE"
+        - id: "ORDER_LINE_UNIT_PRICE"
+          name: "ORDER_LINE_UNIT_PRICE"
           definition: "Price per unit at time of order"
           type: "NUMBER"
           effective_timestamp: true
@@ -285,8 +285,8 @@ model:
           type: "STRING"
           effective_timestamp: true
 
-        - id: "UNIT_PRICE"
-          name: "UNIT_PRICE"
+        - id: "PRODUCT_UNIT_PRICE"
+          name: "PRODUCT_UNIT_PRICE"
           definition: "Current price per unit"
           type: "NUMBER"
           effective_timestamp: true
@@ -376,50 +376,37 @@ model:
           effective_timestamp: true
 
   relationships:
-    - id: "IS_PLACED_BY"
-      name: "IS_PLACED_BY"
+    - name: "IS_PLACED_BY"
       definition: "Links an order to the customer who placed it"
       description: "Each order is placed by exactly one customer"
       source_entity_id: "ORDER"
       target_entity_id: "CUSTOMER"
 
-    - id: "IS_HANDLED_BY"
-      name: "IS_HANDLED_BY"
+    - name: "IS_HANDLED_BY"
       definition: "Links an order to the employee who handled it"
       description: "Each order is handled by one employee"
       source_entity_id: "ORDER"
       target_entity_id: "EMPLOYEE"
 
-    - id: "BELONGS_TO"
-      name: "BELONGS_TO"
+    - name: "BELONGS_TO"
       definition: "Links an order line to its parent order"
       description: "Each order line belongs to exactly one order"
       source_entity_id: "ORDER_LINE"
       target_entity_id: "ORDER"
 
-    - id: "REFERS_TO"
-      name: "REFERS_TO"
+    - name: "REFERS_TO"
       definition: "Links an order line to the product ordered"
       description: "Each order line refers to exactly one product"
       source_entity_id: "ORDER_LINE"
       target_entity_id: "PRODUCT"
 
-    - id: "REPORTS_TO"
-      name: "REPORTS_TO"
-      definition: "Links an employee to their manager"
-      description: "An employee reports to another employee in the organizational hierarchy"
-      source_entity_id: "EMPLOYEE"
-      target_entity_id: "EMPLOYEE"
-
-    - id: "IS_IN_REGION"
-      name: "IS_IN_REGION"
+    - name: "IS_IN_REGION"
       definition: "Links a territory to the region it belongs to"
       description: "Each territory belongs to exactly one region"
       source_entity_id: "TERRITORY"
       target_entity_id: "REGION"
 
-    - id: "IS_ASSIGNED_TO"
-      name: "IS_ASSIGNED_TO"
+    - name: "IS_ASSIGNED_TO"
       definition: "Links an employee to a territory they cover"
       description: "Employees are assigned to territories via the employee_territories junction table"
       source_entity_id: "EMPLOYEE"

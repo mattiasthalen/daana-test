@@ -23,6 +23,6 @@ mapping_groups:
             transformation_expression: "territory_description"
 
     relationships:
-      - id: "IS_IN_REGION"
+      - id: "TERRITORY_IS_IN_REGION_REGION"
         source_table: "das.territories"
         target_transformation_expression: "CAST(region_id AS VARCHAR)"
