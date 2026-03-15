@@ -26,7 +26,7 @@ services:
   # Customer Database (Your Data Warehouse)
   daana-test-customer:
     image: postgres:15
-    container_name: daana-customerdb
+    container_name: daana-test-customerdb
     restart: unless-stopped
     environment:
       POSTGRES_USER: dev
@@ -45,7 +45,7 @@ services:
   # Daana Internal Database (Metadata & Orchestration)
   daana-test-internal:
     image: postgres:15
-    container_name: daana-internaldb
+    container_name: daana-test-internaldb
     restart: unless-stopped
     environment:
       POSTGRES_USER: dev
