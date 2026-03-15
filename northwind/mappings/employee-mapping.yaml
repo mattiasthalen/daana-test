@@ -1,0 +1,88 @@
+entity_id: "EMPLOYEE"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: true
+
+    tables:
+      - connection: "dev"
+        table: "das.employees"
+
+        primary_keys:
+          - employee_id
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "EMPLOYEE_ID"
+            transformation_expression: "CAST(employee_id AS VARCHAR)"
+
+          - id: "LAST_NAME"
+            transformation_expression: "last_name"
+
+          - id: "FIRST_NAME"
+            transformation_expression: "first_name"
+
+          - id: "TITLE"
+            transformation_expression: "title"
+
+          - id: "TITLE_OF_COURTESY"
+            transformation_expression: "title_of_courtesy"
+
+          - id: "BIRTH_DATE"
+            transformation_expression: "birth_date"
+
+          - id: "HIRE_DATE"
+            transformation_expression: "hire_date"
+
+          - id: "ADDRESS"
+            transformation_expression: "address"
+
+          - id: "CITY"
+            transformation_expression: "city"
+
+          - id: "EMPLOYEE_REGION"
+            transformation_expression: "region"
+
+          - id: "POSTAL_CODE"
+            transformation_expression: "postal_code"
+
+          - id: "COUNTRY"
+            transformation_expression: "country"
+
+          - id: "HOME_PHONE"
+            transformation_expression: "home_phone"
+
+          - id: "EXTENSION"
+            transformation_expression: "extension"
+
+          - id: "NOTES"
+            transformation_expression: "notes"
+
+          - id: "PHOTO_PATH"
+            transformation_expression: "photo_path"
+
+      - connection: "dev"
+        table: "das.employee_territories"
+
+        primary_keys:
+          - "employee_id || '|' || territory_id"
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "EMPLOYEE_ID"
+            transformation_expression: "CAST(employee_id AS VARCHAR)"
+
+    relationships:
+      - id: "REPORTS_TO"
+        source_table: "das.employees"
+        target_transformation_expression: "CAST(reports_to AS VARCHAR)"
+
+      - id: "IS_ASSIGNED_TO"
+        source_table: "das.employee_territories"
+        target_transformation_expression: "territory_id"

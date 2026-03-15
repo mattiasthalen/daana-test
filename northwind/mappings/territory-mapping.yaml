@@ -1,0 +1,28 @@
+entity_id: "TERRITORY"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: false
+
+    tables:
+      - connection: "dev"
+        table: "das.territories"
+
+        primary_keys:
+          - territory_id
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "TERRITORY_ID"
+            transformation_expression: "territory_id"
+
+          - id: "TERRITORY_DESCRIPTION"
+            transformation_expression: "territory_description"
+
+    relationships:
+      - id: "IS_IN_REGION"
+        source_table: "das.territories"
+        target_transformation_expression: "CAST(region_id AS VARCHAR)"

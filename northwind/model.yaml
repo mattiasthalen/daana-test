@@ -1,141 +1,426 @@
-# ===========================================================================
-# DATA MODEL - Northwind
-# ===========================================================================
-#
-# This file defines your business entities, their attributes, and relationships.
-# It's the foundation of your data transformation pipeline.
-#
-# Quick Start:
-#   1. Define your entities (e.g., CUSTOMER, ORDER, PRODUCT)
-#   2. Add attributes to each entity
-#   3. Define relationships between entities
-#   4. Validate: daana-cli check model model.yaml
-#
-# Learn more: https://docs.daana.dev/model-language
-#
 model:
-  id: "NORTHWIND_MODEL"
-  name: "NorthwindModel"
-  definition: "Business representation of Northwind"
-  description: "Transforms raw operational data into clean business entities for analytics"
+  id: "NORTHWIND"
+  name: "NORTHWIND"
+  definition: "Northwind business data model"
+  description: "Defines entities and relationships for the Northwind trading company"
 
   entities:
-    # =========================================================================
-    # CUSTOMER - Individual customers or clients
-    # =========================================================================
     - id: "CUSTOMER"
       name: "CUSTOMER"
-      definition: "A customer who makes purchases"
-      description: "Represents individual customers with their contact information and location"
+      definition: "A company that purchases products"
+      description: "Represents a customer company with contact and location information"
       attributes:
         - id: "CUSTOMER_ID"
           name: "CUSTOMER_ID"
           definition: "Unique identifier for the customer"
-          description: "Primary key from the customers table"
+          type: "STRING"
+
+        - id: "COMPANY_NAME"
+          name: "COMPANY_NAME"
+          definition: "Name of the customer company"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "CUSTOMER_CITY"
-          name: "CUSTOMER_CITY"
+        - id: "CONTACT_NAME"
+          name: "CONTACT_NAME"
+          definition: "Name of the primary contact person"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "CONTACT_TITLE"
+          name: "CONTACT_TITLE"
+          definition: "Title of the primary contact person"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "ADDRESS"
+          name: "ADDRESS"
+          definition: "Street address of the customer"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "CITY"
+          name: "CITY"
           definition: "City where the customer is located"
-          description: "Customer's city for delivery and analysis"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "CUSTOMER_STATE"
-          name: "CUSTOMER_STATE"
-          definition: "State where the customer is located"
-          description: "State or province code"
+        - id: "REGION"
+          name: "REGION"
+          definition: "Region or state of the customer"
           type: "STRING"
           effective_timestamp: true
 
-    # =========================================================================
-    # ORDER - Purchase transactions made by customers
-    # =========================================================================
+        - id: "POSTAL_CODE"
+          name: "POSTAL_CODE"
+          definition: "Postal code of the customer"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "COUNTRY"
+          name: "COUNTRY"
+          definition: "Country where the customer is located"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "PHONE"
+          name: "PHONE"
+          definition: "Customer phone number"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "FAX"
+          name: "FAX"
+          definition: "Customer fax number"
+          type: "STRING"
+          effective_timestamp: true
+
+    - id: "EMPLOYEE"
+      name: "EMPLOYEE"
+      definition: "A company employee"
+      description: "Represents an employee with personal details and organizational hierarchy"
+      attributes:
+        - id: "EMPLOYEE_ID"
+          name: "EMPLOYEE_ID"
+          definition: "Unique identifier for the employee"
+          type: "STRING"
+
+        - id: "LAST_NAME"
+          name: "LAST_NAME"
+          definition: "Employee last name"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "FIRST_NAME"
+          name: "FIRST_NAME"
+          definition: "Employee first name"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "TITLE"
+          name: "TITLE"
+          definition: "Employee job title"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "TITLE_OF_COURTESY"
+          name: "TITLE_OF_COURTESY"
+          definition: "Courtesy title such as Mr. or Ms."
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "BIRTH_DATE"
+          name: "BIRTH_DATE"
+          definition: "Employee date of birth"
+          type: "START_TIMESTAMP"
+
+        - id: "HIRE_DATE"
+          name: "HIRE_DATE"
+          definition: "Date the employee was hired"
+          type: "START_TIMESTAMP"
+
+        - id: "ADDRESS"
+          name: "ADDRESS"
+          definition: "Employee street address"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "CITY"
+          name: "CITY"
+          definition: "City where the employee lives"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "EMPLOYEE_REGION"
+          name: "EMPLOYEE_REGION"
+          definition: "Region or state of the employee"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "POSTAL_CODE"
+          name: "POSTAL_CODE"
+          definition: "Postal code of the employee"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "COUNTRY"
+          name: "COUNTRY"
+          definition: "Country where the employee lives"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "HOME_PHONE"
+          name: "HOME_PHONE"
+          definition: "Employee home phone number"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "EXTENSION"
+          name: "EXTENSION"
+          definition: "Employee phone extension"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "NOTES"
+          name: "NOTES"
+          definition: "Biographical notes about the employee"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "PHOTO_PATH"
+          name: "PHOTO_PATH"
+          definition: "File path to employee photo"
+          type: "STRING"
+          effective_timestamp: true
+
     - id: "ORDER"
       name: "ORDER"
-      definition: "A purchase order placed by a customer"
-      description: "Represents individual orders with their status and timestamps"
+      definition: "A customer purchase order"
+      description: "Represents a sales order with shipping and freight details"
       attributes:
         - id: "ORDER_ID"
           name: "ORDER_ID"
           definition: "Unique identifier for the order"
-          description: "Primary key from the orders table"
           type: "STRING"
-          effective_timestamp: true
 
-        - id: "ORDER_STATUS"
-          name: "ORDER_STATUS"
-          definition: "Current status of the order"
-          description: "Status like delivered, shipped, canceled, processing"
-          type: "STRING"
-          effective_timestamp: true
-
-        - id: "ORDER_PURCHASE_TS"
-          name: "ORDER_PURCHASE_TS"
-          definition: "When the order was placed"
-          description: "Timestamp when customer completed the purchase"
+        - id: "ORDER_DATE"
+          name: "ORDER_DATE"
+          definition: "Date the order was placed"
           type: "START_TIMESTAMP"
 
-        - id: "ORDER_DELIVERED_TS"
-          name: "ORDER_DELIVERED_TS"
-          definition: "When the order was delivered"
-          description: "Timestamp when order was delivered to the customer"
+        - id: "REQUIRED_DATE"
+          name: "REQUIRED_DATE"
+          definition: "Date the customer requires delivery"
           type: "END_TIMESTAMP"
 
-        # Grouped attribute example: Order value with currency
-        - id: "ORDER_VALUE"
-          name: "ORDER_VALUE"
-          definition: "Total monetary value of the order"
-          description: "Complete order value including amount and currency denomination"
-          effective_timestamp: true
-          group:
-            - id: "ORDER_VALUE_AMOUNT"
-              name: "ORDER_VALUE_AMOUNT"
-              definition: "Monetary value of the order"
-              description: "Total order value in the specified currency"
-              type: "NUMBER"
-            - id: "ORDER_VALUE_CURRENCY"
-              name: "ORDER_VALUE_CURRENCY"
-              definition: "Currency of the order value"
-              description: "Three-letter currency code (e.g., USD, EUR, BRL)"
-              type: "UNIT"
+        - id: "SHIPPED_DATE"
+          name: "SHIPPED_DATE"
+          definition: "Date the order was shipped"
+          type: "END_TIMESTAMP"
 
-    # =========================================================================
-    # PRODUCT - Items available for sale
-    # =========================================================================
+        - id: "FREIGHT"
+          name: "FREIGHT"
+          definition: "Shipping freight charge"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "SHIP_NAME"
+          name: "SHIP_NAME"
+          definition: "Name of the shipment recipient"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "SHIP_ADDRESS"
+          name: "SHIP_ADDRESS"
+          definition: "Shipping street address"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "SHIP_CITY"
+          name: "SHIP_CITY"
+          definition: "Shipping city"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "SHIP_REGION"
+          name: "SHIP_REGION"
+          definition: "Shipping region or state"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "SHIP_POSTAL_CODE"
+          name: "SHIP_POSTAL_CODE"
+          definition: "Shipping postal code"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "SHIP_COUNTRY"
+          name: "SHIP_COUNTRY"
+          definition: "Shipping country"
+          type: "STRING"
+          effective_timestamp: true
+
+    - id: "ORDER_LINE"
+      name: "ORDER_LINE"
+      definition: "A line item within an order"
+      description: "Represents a single product entry in an order with quantity and pricing"
+      attributes:
+        - id: "UNIT_PRICE"
+          name: "UNIT_PRICE"
+          definition: "Price per unit at time of order"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "QUANTITY"
+          name: "QUANTITY"
+          definition: "Number of units ordered"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "DISCOUNT"
+          name: "DISCOUNT"
+          definition: "Discount percentage applied"
+          type: "NUMBER"
+          effective_timestamp: true
+
     - id: "PRODUCT"
       name: "PRODUCT"
-      definition: "A product available for purchase"
-      description: "Represents books and other items in the catalog"
+      definition: "A product available for sale"
+      description: "Represents an item in the product catalog with pricing and stock details"
       attributes:
         - id: "PRODUCT_ID"
           name: "PRODUCT_ID"
           definition: "Unique identifier for the product"
-          description: "Primary key from the products table"
+          type: "STRING"
+
+        - id: "PRODUCT_NAME"
+          name: "PRODUCT_NAME"
+          definition: "Name of the product"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "PRODUCT_TITLE"
-          name: "PRODUCT_TITLE"
-          definition: "Title of the product"
-          description: "Name or title of the item"
+        - id: "QUANTITY_PER_UNIT"
+          name: "QUANTITY_PER_UNIT"
+          definition: "Quantity description per sales unit"
           type: "STRING"
           effective_timestamp: true
 
-        - id: "PRODUCT_FORMAT"
-          name: "PRODUCT_FORMAT"
-          definition: "Format of the product"
-          description: "Physical format like Hardcover, Paperback, eBook"
+        - id: "UNIT_PRICE"
+          name: "UNIT_PRICE"
+          definition: "Current price per unit"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "UNITS_IN_STOCK"
+          name: "UNITS_IN_STOCK"
+          definition: "Number of units currently in stock"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "UNITS_ON_ORDER"
+          name: "UNITS_ON_ORDER"
+          definition: "Number of units on order from suppliers"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "REORDER_LEVEL"
+          name: "REORDER_LEVEL"
+          definition: "Minimum stock level before reorder"
+          type: "NUMBER"
+          effective_timestamp: true
+
+        - id: "DISCONTINUED"
+          name: "DISCONTINUED"
+          definition: "Whether the product is discontinued"
+          type: "NUMBER"
+          effective_timestamp: true
+
+    - id: "TERRITORY"
+      name: "TERRITORY"
+      definition: "A sales territory"
+      description: "Represents a geographic territory for sales coverage"
+      attributes:
+        - id: "TERRITORY_ID"
+          name: "TERRITORY_ID"
+          definition: "Unique identifier for the territory"
+          type: "STRING"
+
+        - id: "TERRITORY_DESCRIPTION"
+          name: "TERRITORY_DESCRIPTION"
+          definition: "Name or description of the territory"
           type: "STRING"
           effective_timestamp: true
 
-  # ===========================================================================
-  # RELATIONSHIPS - How entities connect to each other
-  # ===========================================================================
+    - id: "REGION"
+      name: "REGION"
+      definition: "A geographic region"
+      description: "Represents a high-level geographic region grouping territories"
+      attributes:
+        - id: "REGION_ID"
+          name: "REGION_ID"
+          definition: "Unique identifier for the region"
+          type: "STRING"
+
+        - id: "REGION_DESCRIPTION"
+          name: "REGION_DESCRIPTION"
+          definition: "Name or description of the region"
+          type: "STRING"
+          effective_timestamp: true
+
+    - id: "US_STATE"
+      name: "US_STATE"
+      definition: "A US state"
+      description: "Represents a US state with its abbreviation and geographic region"
+      attributes:
+        - id: "STATE_ID"
+          name: "STATE_ID"
+          definition: "Unique identifier for the state"
+          type: "STRING"
+
+        - id: "STATE_NAME"
+          name: "STATE_NAME"
+          definition: "Full name of the state"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "STATE_ABBR"
+          name: "STATE_ABBR"
+          definition: "Two-letter state abbreviation"
+          type: "STRING"
+          effective_timestamp: true
+
+        - id: "STATE_REGION"
+          name: "STATE_REGION"
+          definition: "Geographic region of the state"
+          type: "STRING"
+          effective_timestamp: true
+
   relationships:
-    - name: "IS_PLACED_BY"
-      definition: "Order is placed by a customer"
-      description: "Links orders to the customer who placed them. One customer can place many orders."
+    - id: "IS_PLACED_BY"
+      name: "IS_PLACED_BY"
+      definition: "Links an order to the customer who placed it"
+      description: "Each order is placed by exactly one customer"
       source_entity_id: "ORDER"
       target_entity_id: "CUSTOMER"
+
+    - id: "IS_HANDLED_BY"
+      name: "IS_HANDLED_BY"
+      definition: "Links an order to the employee who handled it"
+      description: "Each order is handled by one employee"
+      source_entity_id: "ORDER"
+      target_entity_id: "EMPLOYEE"
+
+    - id: "BELONGS_TO"
+      name: "BELONGS_TO"
+      definition: "Links an order line to its parent order"
+      description: "Each order line belongs to exactly one order"
+      source_entity_id: "ORDER_LINE"
+      target_entity_id: "ORDER"
+
+    - id: "REFERS_TO"
+      name: "REFERS_TO"
+      definition: "Links an order line to the product ordered"
+      description: "Each order line refers to exactly one product"
+      source_entity_id: "ORDER_LINE"
+      target_entity_id: "PRODUCT"
+
+    - id: "REPORTS_TO"
+      name: "REPORTS_TO"
+      definition: "Links an employee to their manager"
+      description: "An employee reports to another employee in the organizational hierarchy"
+      source_entity_id: "EMPLOYEE"
+      target_entity_id: "EMPLOYEE"
+
+    - id: "IS_IN_REGION"
+      name: "IS_IN_REGION"
+      definition: "Links a territory to the region it belongs to"
+      description: "Each territory belongs to exactly one region"
+      source_entity_id: "TERRITORY"
+      target_entity_id: "REGION"
+
+    - id: "IS_ASSIGNED_TO"
+      name: "IS_ASSIGNED_TO"
+      definition: "Links an employee to a territory they cover"
+      description: "Employees are assigned to territories via the employee_territories junction table"
+      source_entity_id: "EMPLOYEE"
+      target_entity_id: "TERRITORY"

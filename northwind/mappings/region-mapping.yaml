@@ -1,0 +1,23 @@
+entity_id: "REGION"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: false
+
+    tables:
+      - connection: "dev"
+        table: "das.region"
+
+        primary_keys:
+          - region_id
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "REGION_ID"
+            transformation_expression: "CAST(region_id AS VARCHAR)"
+
+          - id: "REGION_DESCRIPTION"
+            transformation_expression: "region_description"

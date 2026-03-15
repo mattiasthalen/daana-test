@@ -1,0 +1,41 @@
+entity_id: "PRODUCT"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: false
+
+    tables:
+      - connection: "dev"
+        table: "das.products"
+
+        primary_keys:
+          - product_id
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "PRODUCT_ID"
+            transformation_expression: "CAST(product_id AS VARCHAR)"
+
+          - id: "PRODUCT_NAME"
+            transformation_expression: "product_name"
+
+          - id: "QUANTITY_PER_UNIT"
+            transformation_expression: "quantity_per_unit"
+
+          - id: "UNIT_PRICE"
+            transformation_expression: "unit_price"
+
+          - id: "UNITS_IN_STOCK"
+            transformation_expression: "units_in_stock"
+
+          - id: "UNITS_ON_ORDER"
+            transformation_expression: "units_on_order"
+
+          - id: "REORDER_LEVEL"
+            transformation_expression: "reorder_level"
+
+          - id: "DISCONTINUED"
+            transformation_expression: "discontinued"

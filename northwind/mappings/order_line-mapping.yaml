@@ -1,0 +1,35 @@
+entity_id: "ORDER_LINE"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: false
+
+    tables:
+      - connection: "dev"
+        table: "das.order_details"
+
+        primary_keys:
+          - "order_id || '|' || product_id"
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "UNIT_PRICE"
+            transformation_expression: "unit_price"
+
+          - id: "QUANTITY"
+            transformation_expression: "quantity"
+
+          - id: "DISCOUNT"
+            transformation_expression: "discount"
+
+    relationships:
+      - id: "BELONGS_TO"
+        source_table: "das.order_details"
+        target_transformation_expression: "CAST(order_id AS VARCHAR)"
+
+      - id: "REFERS_TO"
+        source_table: "das.order_details"
+        target_transformation_expression: "CAST(product_id AS VARCHAR)"

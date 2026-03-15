@@ -1,0 +1,29 @@
+entity_id: "US_STATE"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: false
+
+    tables:
+      - connection: "dev"
+        table: "das.us_states"
+
+        primary_keys:
+          - state_id
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "STATE_ID"
+            transformation_expression: "CAST(state_id AS VARCHAR)"
+
+          - id: "STATE_NAME"
+            transformation_expression: "state_name"
+
+          - id: "STATE_ABBR"
+            transformation_expression: "state_abbr"
+
+          - id: "STATE_REGION"
+            transformation_expression: "state_region"

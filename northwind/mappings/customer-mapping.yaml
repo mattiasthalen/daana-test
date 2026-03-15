@@ -1,0 +1,50 @@
+entity_id: "CUSTOMER"
+
+mapping_groups:
+  - name: "default_mapping_group"
+    allow_multiple_identifiers: false
+
+    tables:
+      - connection: "dev"
+        table: "das.customers"
+
+        primary_keys:
+          - customer_id
+
+        ingestion_strategy: FULL
+
+        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+
+        attributes:
+          - id: "CUSTOMER_ID"
+            transformation_expression: "customer_id"
+
+          - id: "COMPANY_NAME"
+            transformation_expression: "company_name"
+
+          - id: "CONTACT_NAME"
+            transformation_expression: "contact_name"
+
+          - id: "CONTACT_TITLE"
+            transformation_expression: "contact_title"
+
+          - id: "ADDRESS"
+            transformation_expression: "address"
+
+          - id: "CITY"
+            transformation_expression: "city"
+
+          - id: "REGION"
+            transformation_expression: "region"
+
+          - id: "POSTAL_CODE"
+            transformation_expression: "postal_code"
+
+          - id: "COUNTRY"
+            transformation_expression: "country"
+
+          - id: "PHONE"
+            transformation_expression: "phone"
+
+          - id: "FAX"
+            transformation_expression: "fax"
