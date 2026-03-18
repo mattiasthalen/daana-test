@@ -1,0 +1,136 @@
+<section id="tab-overview" class="tab-panel tab-panel--active">
+
+  {% assign eoty = site.data.employees | where: "employee_of_year", true | first %}
+
+  <!-- 1. Employee of the Year Card -->
+  <div class="card card--highlight">
+    <h2>{{ eoty.name }} — Employee of the Year</h2>
+    <div class="stat-row">
+      <div class="stat-box">
+        <span class="stat-label">Revenue</span>
+        <span class="stat-value">${{ eoty.revenue | divided_by: 1000 }},{{ eoty.revenue | modulo: 1000 }}</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Orders</span>
+        <span class="stat-value">{{ eoty.orders }}</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Customers</span>
+        <span class="stat-value">{{ eoty.customers }}</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Product Breadth</span>
+        <span class="stat-value">{{ eoty.product_breadth }}</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Retention</span>
+        <span class="stat-value">{{ eoty.retention_pct }}%</span>
+      </div>
+    </div>
+    <p>The clear 1997 winner — leading every volume and relationship metric. Peacock sells the widest range of products and retains more customers than anyone else.</p>
+  </div>
+
+  <!-- 2. At a Glance Summary Table -->
+  <div class="card">
+    <h3>At a Glance</h3>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Revenue</th>
+          <th>Orders</th>
+          <th>Avg Order</th>
+          <th>Customers</th>
+          <th>Disc%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in site.data.employees %}
+        <tr>
+          <td>{{ emp.name }}</td>
+          <td class="mono">${{ emp.revenue | divided_by: 1 }}</td>
+          <td class="mono">{{ emp.orders }}</td>
+          <td class="mono">${{ emp.avg_order | divided_by: 1 }}</td>
+          <td class="mono">{{ emp.customers }}</td>
+          <td class="mono">{{ emp.discount_pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3. Key Insights -->
+  <div class="card">
+    <h3>Key Insights</h3>
+    <ul class="insight-list">
+      <li><strong>Margaret Peacock — Volume Leader:</strong> Most orders (81), customers (57), and products sold (67). Drives revenue through breadth and retention (31.6%).</li>
+      <li><strong>Andrew Fuller — Margin Champion:</strong> Lowest discount (3.9%) with the highest avg order ($1,718). Sells on value, not price.</li>
+      <li><strong>Laura Callahan — Volume Without Value:</strong> 54 orders (4th) but lowest avg order size ($1,038) and high discount (7.5%). Needs upselling coaching.</li>
+      <li><strong>Anne Dodsworth — Discount Concern:</strong> Highest discount rate (9.0%) and lowest revenue. Discounting isn't driving volume.</li>
+      <li><strong>Nancy Davolio — Quiet Performer:</strong> #3 revenue with strong avg order ($1,694), low discount (4.6%), and high retention (30.0%).</li>
+      <li><strong>Robert King — Territory Paradox:</strong> Most territories (10) but only 30 customers. Spread too thin?</li>
+    </ul>
+  </div>
+
+  <!-- 4. Metrics Framework -->
+  <div class="card">
+    <h3>Metrics Framework</h3>
+    <table class="framework-table">
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Metric</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Output</strong></td>
+          <td>Total Revenue</td>
+          <td>quantity x unit price x (1 - discount) per order line</td>
+        </tr>
+        <tr>
+          <td><strong>Throughput</strong></td>
+          <td>Orders</td>
+          <td>Number of orders handled</td>
+        </tr>
+        <tr>
+          <td><strong>Throughput</strong></td>
+          <td>Avg Order Size</td>
+          <td>Revenue per order (upselling indicator)</td>
+        </tr>
+        <tr>
+          <td><strong>Throughput</strong></td>
+          <td>Customers</td>
+          <td>Distinct customers served (breadth indicator)</td>
+        </tr>
+        <tr>
+          <td><strong>Throughput</strong></td>
+          <td>Avg Discount %</td>
+          <td>Average discount given (margin discipline)</td>
+        </tr>
+        <tr>
+          <td><strong>Input</strong></td>
+          <td>Product Breadth</td>
+          <td>Distinct products sold (cross-selling effort)</td>
+        </tr>
+        <tr>
+          <td><strong>Input</strong></td>
+          <td>Customer Retention</td>
+          <td>% of customers also served in prior year (relationship building)</td>
+        </tr>
+        <tr>
+          <td><strong>Input</strong></td>
+          <td>Order Frequency</td>
+          <td>Orders per customer (engagement depth)</td>
+        </tr>
+        <tr>
+          <td><strong>Input</strong></td>
+          <td>Territory Coverage</td>
+          <td>Territories assigned (reach)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
