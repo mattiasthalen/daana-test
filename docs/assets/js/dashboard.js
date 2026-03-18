@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   activate(location.hash.slice(1) || 'overview');
 
   initThroughputCharts();
+  initInputCharts();
 });
 
 function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', sortAsc = false } = {}) {
@@ -77,6 +78,18 @@ function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', so
       }
     }
   });
+}
+
+function initInputCharts() {
+  const emps = window.dashboardData?.employees;
+  if (!emps) return;
+
+  const names = emps.map(e => e.name);
+
+  renderBarChart('chart-product-breadth', names, emps.map(e => e.product_breadth));
+  renderBarChart('chart-retention', names, emps.map(e => e.retention_pct), { suffix: '%' });
+  renderBarChart('chart-frequency', names, emps.map(e => e.order_frequency));
+  renderBarChart('chart-territories', names, emps.map(e => e.territories));
 }
 
 function initThroughputCharts() {

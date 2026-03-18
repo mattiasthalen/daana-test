@@ -1,0 +1,191 @@
+<section id="tab-input" class="tab-panel">
+  <div class="chart-card">
+    <h3 class="chart-card__title">Product Breadth</h3>
+    <p class="chart-card__subtitle">Distinct products sold — measures cross-selling effort</p>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-product-breadth"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_line_order AS (
+  SELECT order_line_key, order_key
+  FROM daana_dw.order_line_order_x
+  WHERE type_key = 72 AND row_st = 'Y'
+),
+order_line_product AS (
+  SELECT order_line_key, product_key
+  FROM daana_dw.order_line_product_x
+  WHERE type_key = 28 AND row_st = 'Y'
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  COUNT(DISTINCT olp.product_key) AS distinct_products
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+JOIN order_line_order olo ON oe.order_key = olo.order_key
+JOIN order_line_product olp ON olo.order_line_key = olp.order_line_key
+GROUP BY en.first_name, en.last_name
+ORDER BY distinct_products DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Customer Retention</h3>
+    <p class="chart-card__subtitle">% of 1997 customers who were also served in 1996 — measures relationship building</p>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-retention"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_customer AS (
+  SELECT order_key, customer_key
+  FROM daana_dw.order_customer_x
+  WHERE type_key = 15 AND row_st = 'Y'
+),
+prev_year_customers AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM order_employee oe
+  JOIN daana_dw.order_desc od ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= '1996-01-01' AND od.sta_tmstp < '1997-01-01'
+  JOIN order_customer oc ON oe.order_key = oc.order_key
+),
+curr_year_customers AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM order_employee oe
+  JOIN order_dates od ON oe.order_key = od.order_key
+  JOIN order_customer oc ON oe.order_key = oc.order_key
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  COUNT(DISTINCT CASE WHEN pyc.customer_key IS NOT NULL
+    THEN cyc.customer_key END) AS retained,
+  COUNT(DISTINCT cyc.customer_key) AS total,
+  ROUND(100.0 * COUNT(DISTINCT CASE WHEN pyc.customer_key IS NOT NULL
+    THEN cyc.customer_key END)
+    / NULLIF(COUNT(DISTINCT cyc.customer_key), 0), 1) AS retention_pct
+FROM employee_names en
+JOIN curr_year_customers cyc ON en.employee_key = cyc.employee_key
+LEFT JOIN prev_year_customers pyc
+  ON en.employee_key = pyc.employee_key
+  AND cyc.customer_key = pyc.customer_key
+GROUP BY en.first_name, en.last_name
+ORDER BY retention_pct DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Order Frequency</h3>
+    <p class="chart-card__subtitle">Orders per customer — measures engagement depth</p>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-frequency"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_customer AS (
+  SELECT order_key, customer_key
+  FROM daana_dw.order_customer_x
+  WHERE type_key = 15 AND row_st = 'Y'
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  ROUND(COUNT(DISTINCT oe.order_key)::numeric
+    / NULLIF(COUNT(DISTINCT oc.customer_key), 0), 1) AS orders_per_customer
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+JOIN order_customer oc ON oe.order_key = oc.order_key
+GROUP BY en.first_name, en.last_name
+ORDER BY orders_per_customer DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Territory Coverage</h3>
+    <p class="chart-card__subtitle">Territories assigned per employee</p>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-territories"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+employee_territory AS (
+  SELECT employee_key, territory_key
+  FROM daana_dw.employee_territory_x
+  WHERE type_key = 26 AND row_st = 'Y'
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  COUNT(DISTINCT et.territory_key) AS territories
+FROM employee_names en
+LEFT JOIN employee_territory et ON en.employee_key = et.employee_key
+GROUP BY en.first_name, en.last_name
+ORDER BY territories DESC</code></pre>
+    </details>
+  </div>
+</section>
