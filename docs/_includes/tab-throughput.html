@@ -1,0 +1,245 @@
+<section id="tab-throughput" class="tab-panel">
+  <script>
+    window.dashboardData = window.dashboardData || {};
+    window.dashboardData.employees = {{ site.data.employees | jsonify }};
+  </script>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Total Revenue</h3>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-revenue"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_line_order AS (
+  SELECT order_line_key, order_key
+  FROM daana_dw.order_line_order_x
+  WHERE type_key = 72 AND row_st = 'Y'
+),
+order_line_details AS (
+  SELECT order_line_key,
+    MAX(CASE WHEN type_key = 55 THEN val_num END) AS quantity,
+    MAX(CASE WHEN type_key = 64 THEN val_num END) AS unit_price,
+    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
+  FROM daana_dw.order_line_desc
+  WHERE type_key IN (55, 64, 62) AND row_st = 'Y'
+  GROUP BY order_line_key
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  ROUND(SUM(old.quantity * old.unit_price * (1 - old.discount))::numeric, 2) AS total_revenue
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+JOIN order_line_order olo ON oe.order_key = olo.order_key
+JOIN order_line_details old ON olo.order_line_key = old.order_line_key
+GROUP BY en.first_name, en.last_name
+ORDER BY total_revenue DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Orders Handled</h3>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-orders"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  COUNT(DISTINCT oe.order_key) AS orders
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+GROUP BY en.first_name, en.last_name
+ORDER BY orders DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Avg Order Size</h3>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-avg-order"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_line_order AS (
+  SELECT order_line_key, order_key
+  FROM daana_dw.order_line_order_x
+  WHERE type_key = 72 AND row_st = 'Y'
+),
+order_line_details AS (
+  SELECT order_line_key,
+    MAX(CASE WHEN type_key = 55 THEN val_num END) AS quantity,
+    MAX(CASE WHEN type_key = 64 THEN val_num END) AS unit_price,
+    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
+  FROM daana_dw.order_line_desc
+  WHERE type_key IN (55, 64, 62) AND row_st = 'Y'
+  GROUP BY order_line_key
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  ROUND((SUM(old.quantity * old.unit_price * (1 - old.discount))
+    / COUNT(DISTINCT oe.order_key))::numeric, 2) AS avg_order_size
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+JOIN order_line_order olo ON oe.order_key = olo.order_key
+JOIN order_line_details old ON olo.order_line_key = old.order_line_key
+GROUP BY en.first_name, en.last_name
+ORDER BY avg_order_size DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Customers Served</h3>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-customers"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_customer AS (
+  SELECT order_key, customer_key
+  FROM daana_dw.order_customer_x
+  WHERE type_key = 15 AND row_st = 'Y'
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  COUNT(DISTINCT oc.customer_key) AS customers
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+JOIN order_customer oc ON oe.order_key = oc.order_key
+GROUP BY en.first_name, en.last_name
+ORDER BY customers DESC</code></pre>
+    </details>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-card__title">Avg Discount %</h3>
+    <p class="chart-card__subtitle">Lower is better — indicates margin discipline</p>
+    <div style="position: relative; height: 350px;">
+      <canvas id="chart-discount"></canvas>
+    </div>
+    <details>
+      <summary>Show query</summary>
+      <pre><code>WITH employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  GROUP BY employee_key
+),
+order_employee AS (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+),
+order_dates AS (
+  SELECT order_key
+  FROM daana_dw.order_desc
+  WHERE type_key = 3 AND row_st = 'Y'
+    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+),
+order_line_order AS (
+  SELECT order_line_key, order_key
+  FROM daana_dw.order_line_order_x
+  WHERE type_key = 72 AND row_st = 'Y'
+),
+order_line_details AS (
+  SELECT order_line_key,
+    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
+  FROM daana_dw.order_line_desc
+  WHERE type_key = 62 AND row_st = 'Y'
+  GROUP BY order_line_key
+)
+SELECT
+  en.first_name || ' ' || en.last_name AS employee,
+  ROUND(AVG(old.discount)::numeric * 100, 1) AS avg_discount_pct
+FROM employee_names en
+JOIN order_employee oe ON en.employee_key = oe.employee_key
+JOIN order_dates od ON oe.order_key = od.order_key
+JOIN order_line_order olo ON oe.order_key = olo.order_key
+JOIN order_line_details old ON olo.order_line_key = old.order_line_key
+GROUP BY en.first_name, en.last_name
+ORDER BY avg_discount_pct ASC</code></pre>
+    </details>
+  </div>
+</section>
