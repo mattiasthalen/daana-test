@@ -1,0 +1,99 @@
+- name: Margaret Peacock
+  revenue: 128810
+  orders: 81
+  avg_order: 1590
+  customers: 57
+  discount_pct: 6.7
+  product_breadth: 67
+  retention_pct: 31.6
+  order_frequency: 1.4
+  territories: 3
+  employee_of_year: true
+
+- name: Janet Leverling
+  revenue: 108026
+  orders: 71
+  avg_order: 1522
+  customers: 46
+  discount_pct: 4.1
+  product_breadth: 67
+  retention_pct: 21.7
+  order_frequency: 1.5
+  territories: 4
+
+- name: Nancy Davolio
+  revenue: 93148
+  orders: 55
+  avg_order: 1694
+  customers: 40
+  discount_pct: 4.6
+  product_breadth: 63
+  retention_pct: 30.0
+  order_frequency: 1.4
+  territories: 2
+
+- name: Andrew Fuller
+  revenue: 70444
+  orders: 41
+  avg_order: 1718
+  customers: 35
+  discount_pct: 3.9
+  product_breadth: 55
+  retention_pct: 20.0
+  order_frequency: 1.2
+  territories: 7
+
+- name: Robert King
+  revenue: 60471
+  orders: 36
+  avg_order: 1680
+  customers: 30
+  discount_pct: 7.5
+  product_breadth: 54
+  retention_pct: 13.3
+  order_frequency: 1.2
+  territories: 10
+
+- name: Laura Callahan
+  revenue: 56033
+  orders: 54
+  avg_order: 1038
+  customers: 36
+  discount_pct: 7.5
+  product_breadth: 57
+  retention_pct: 22.2
+  order_frequency: 1.5
+  territories: 4
+
+- name: Michael Suyama
+  revenue: 43126
+  orders: 33
+  avg_order: 1307
+  customers: 24
+  discount_pct: 6.9
+  product_breadth: 51
+  retention_pct: 29.2
+  order_frequency: 1.4
+  territories: 5
+
+- name: Steven Buchanan
+  revenue: 30716
+  orders: 18
+  avg_order: 1706
+  customers: 13
+  discount_pct: 6.3
+  product_breadth: 37
+  retention_pct: 7.7
+  order_frequency: 1.4
+  territories: 7
+
+- name: Anne Dodsworth
+  revenue: 26310
+  orders: 19
+  avg_order: 1385
+  customers: 16
+  discount_pct: 9.0
+  product_breadth: 30
+  retention_pct: 6.3
+  order_frequency: 1.2
+  territories: 7

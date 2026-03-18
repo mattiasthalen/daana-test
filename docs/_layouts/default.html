@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ site.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header__title">Northwind</h1>
+    <p class="header__subtitle">Employee Performance Dashboard (1997)</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tabs__btn tabs__btn--active" data-tab="overview">Overview</button>
+    <button class="tabs__btn" data-tab="throughput">Throughput</button>
+    <button class="tabs__btn" data-tab="input">Input</button>
+    <button class="tabs__btn" data-tab="correlations">Correlations</button>
+  </nav>
+
+  <main class="content">
+    {{ content }}
+  </main>
+
+  <footer class="footer">
+    <p>Data source: Northwind Traders via Daana DW</p>
+  </footer>
+
+  <script src="{{ '/assets/js/dashboard.js' | relative_url }}"></script>
+</body>
+</html>
