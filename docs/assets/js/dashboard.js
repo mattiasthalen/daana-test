@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initThroughputCharts();
   initInputCharts();
+  initCorrelationChart();
 });
 
 function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', sortAsc = false } = {}) {
@@ -70,6 +71,64 @@ function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', so
         x: {
           grid: { color: 'rgba(255,255,255,0.06)' },
           ticks: { color: '#8b949e', font: { family: "'JetBrains Mono', monospace" } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#e6edf3', font: { family: "'JetBrains Mono', monospace", size: 12 } }
+        }
+      }
+    }
+  });
+}
+
+function initCorrelationChart() {
+  const corrs = window.dashboardData?.correlations;
+  if (!corrs) return;
+
+  const sorted = [...corrs].sort((a, b) => b.r - a.r);
+  const labels = sorted.map(c => c.metric);
+  const values = sorted.map(c => c.r);
+  const colors = values.map(v => v >= 0 ? '#00d4ff' : '#f0883e');
+
+  const ctx = document.getElementById('chart-correlations');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderRadius: 4,
+        barThickness: 24
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const corr = sorted[ctx.dataIndex];
+              return `r = ${corr.r > 0 ? '+' : ''}${corr.r} (${corr.strength})`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: -1,
+          max: 1,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: {
+            color: '#8b949e',
+            font: { family: "'JetBrains Mono', monospace" },
+            callback: (v) => (v > 0 ? '+' : '') + v.toFixed(1)
+          }
         },
         y: {
           grid: { display: false },
