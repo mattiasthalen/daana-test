@@ -29,7 +29,34 @@ document.addEventListener('DOMContentLoaded', () => {
   initThroughputCharts();
   initInputCharts();
   initCorrelationChart();
+  formatMonoCells();
 });
+
+/* Format dollar amounts and bare numbers in .mono table cells */
+function formatMonoCells() {
+  document.querySelectorAll('.summary-table .mono').forEach(cell => {
+    const text = cell.textContent.trim();
+    const dollarMatch = text.match(/^\$(\d+)$/);
+    if (dollarMatch) {
+      cell.textContent = '$' + Number(dollarMatch[1]).toLocaleString();
+      return;
+    }
+    const numberMatch = text.match(/^(\d+)$/);
+    if (numberMatch) {
+      cell.textContent = Number(numberMatch[1]).toLocaleString();
+    }
+  });
+
+  /* Fix Employee-of-the-Year revenue (crude Liquid math can drop leading zeros) */
+  document.querySelectorAll('.stat-box .stat-value, .stat-box .stat-box__value').forEach(el => {
+    const text = el.textContent.trim();
+    const m = text.match(/^\$(\d[\d,]*\d?)$/);
+    if (m) {
+      const raw = m[1].replace(/,/g, '');
+      el.textContent = '$' + Number(raw).toLocaleString();
+    }
+  });
+}
 
 function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', sortAsc = false } = {}) {
   const ctx = document.getElementById(canvasId);

@@ -5,4 +5,3 @@ url: "https://mattiasthalen.github.io"
 markdown: kramdown
 exclude:
   - plans/
-  - mockups/
