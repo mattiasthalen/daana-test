@@ -1,2 +1,3 @@
 daana-cli*.tar.gz
 *.log
+.worktrees/
