@@ -7,8 +7,8 @@
 
 <div class="chart-card">
   <h2>Input &rarr; Output Correlation</h2>
-  <p class="subtitle">How strongly does each metric correlate with revenue? (Pearson r, n=9 employees)</p>
-  <div style="height: 350px;">
+  <p class="chart-card__subtitle">How strongly does each metric correlate with revenue? (Pearson r, n=9 employees)</p>
+  <div style="position: relative; height: 350px;">
     <canvas id="chart-correlations"></canvas>
   </div>
 </div>
@@ -18,7 +18,7 @@
   <p><strong>What doesn't help:</strong> more territories (spread too thin) and higher discounts (erodes without adding volume).</p>
 </div>
 
-<details class="sql-details">
+<details>
   <summary>SQL Query</summary>
   <pre><code>WITH employee_names AS (
   SELECT employee_key,

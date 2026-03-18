@@ -7,24 +7,24 @@
     <h2>{{ eoty.name }} — Employee of the Year</h2>
     <div class="stat-row">
       <div class="stat-box">
-        <span class="stat-label">Revenue</span>
-        <span class="stat-value">${{ eoty.revenue | divided_by: 1000 }},{{ eoty.revenue | modulo: 1000 }}</span>
+        <span class="stat-box__label">Revenue</span>
+        <span class="stat-box__value">${{ eoty.revenue | divided_by: 1000 }},{{ eoty.revenue | modulo: 1000 }}</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">Orders</span>
-        <span class="stat-value">{{ eoty.orders }}</span>
+        <span class="stat-box__label">Orders</span>
+        <span class="stat-box__value">{{ eoty.orders }}</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">Customers</span>
-        <span class="stat-value">{{ eoty.customers }}</span>
+        <span class="stat-box__label">Customers</span>
+        <span class="stat-box__value">{{ eoty.customers }}</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">Product Breadth</span>
-        <span class="stat-value">{{ eoty.product_breadth }}</span>
+        <span class="stat-box__label">Product Breadth</span>
+        <span class="stat-box__value">{{ eoty.product_breadth }}</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">Retention</span>
-        <span class="stat-value">{{ eoty.retention_pct }}%</span>
+        <span class="stat-box__label">Retention</span>
+        <span class="stat-box__value">{{ eoty.retention_pct }}%</span>
       </div>
     </div>
     <p>The clear 1997 winner — leading every volume and relationship metric. Peacock sells the widest range of products and retains more customers than anyone else.</p>
