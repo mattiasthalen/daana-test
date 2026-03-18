@@ -1,0 +1,8 @@
+title: "Northwind — Employee Performance Dashboard"
+description: "1997 Employee Performance Analytics"
+baseurl: "/daana-test"
+url: "https://mattiasthalen.github.io"
+markdown: kramdown
+exclude:
+  - plans/
+  - mockups/
