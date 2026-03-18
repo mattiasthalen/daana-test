@@ -13,7 +13,7 @@ mapping_groups:
 
         ingestion_strategy: FULL
 
-        entity_effective_timestamp_expression: "CURRENT_TIMESTAMP"
+        entity_effective_timestamp_expression: "updated_at"
 
         attributes:
           - id: "ORDER_LINE_UNIT_PRICE"
