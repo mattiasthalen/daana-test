@@ -67,130 +67,125 @@ Customers             +0.97    ████████████████�
 Orders                +0.95    ███████████████████████████████████████   very strong
 Product Breadth       +0.90    █████████████████████████████████████     very strong
 Customer Retention    +0.70    █████████████████████████████             strong
-Avg Discount          -0.54    ██████████████████████                    moderate (negative)
-Territory Coverage    -0.59    ████████████████████████                  moderate (negative)
-Order Frequency       +0.36    ███████████████                           weak
+Order Frequency       +0.43    █████████████████                         moderate
 Avg Order Size        +0.27    ███████████                               weak
+Avg Discount          -0.53    ██████████████████████                    moderate (negative)
+Territory Coverage    -0.59    ████████████████████████                  moderate (negative)
 ```
 
 **What drives revenue:** selling many products to many customers, and keeping them coming back.
 **What doesn't help:** more territories (spread too thin) and higher discounts (erodes without adding volume).
 
 <details>
+<summary>Show prompt</summary>
+
+> Pearson correlation of each employee metric (orders, avg order size, customers, avg discount, product breadth, customer retention, order frequency, territories) with total revenue across all 9 employees for 1997.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_customer AS (
-  SELECT order_key, customer_key
-  FROM daana_dw.order_customer_x
-  WHERE type_key = 15 AND row_st = 'Y'
-),
-order_line_order AS (
-  SELECT order_line_key, order_key
-  FROM daana_dw.order_line_order_x
-  WHERE type_key = 72 AND row_st = 'Y'
-),
-order_line_details AS (
-  SELECT order_line_key,
-    MAX(CASE WHEN type_key = 55 THEN val_num END) AS quantity,
-    MAX(CASE WHEN type_key = 64 THEN val_num END) AS unit_price,
-    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
-  FROM daana_dw.order_line_desc
-  WHERE type_key IN (55, 64, 62) AND row_st = 'Y'
-  GROUP BY order_line_key
-),
-order_line_product AS (
-  SELECT order_line_key, product_key
-  FROM daana_dw.order_line_product_x
-  WHERE type_key = 28 AND row_st = 'Y'
-),
-employee_territory AS (
-  SELECT employee_key, territory_key
-  FROM daana_dw.employee_territory_x
-  WHERE type_key = 26 AND row_st = 'Y'
-),
-prev_year_customers AS (
-  SELECT DISTINCT oe.employee_key, oc.customer_key
-  FROM order_employee oe
-  JOIN daana_dw.order_desc od ON oe.order_key = od.order_key
-    AND od.type_key = 3 AND od.row_st = 'Y'
-    AND od.sta_tmstp >= '1996-01-01' AND od.sta_tmstp < '1997-01-01'
-  JOIN order_customer oc ON oe.order_key = oc.order_key
-),
-curr_year_customers AS (
-  SELECT DISTINCT oe.employee_key, oc.customer_key
-  FROM order_employee oe
-  JOIN order_dates od ON oe.order_key = od.order_key
-  JOIN order_customer oc ON oe.order_key = oc.order_key
-),
-employee_metrics AS (
+WITH
+order_metrics AS (
   SELECT
-    en.employee_key,
-    SUM(old.quantity * old.unit_price * (1 - old.discount)) AS total_revenue,
+    oe.employee_key,
     COUNT(DISTINCT oe.order_key) AS orders,
-    SUM(old.quantity * old.unit_price * (1 - old.discount))
-      / COUNT(DISTINCT oe.order_key) AS avg_order_size,
+    SUM(old.val_num * olq.val_num * (1 - COALESCE(oldisc.val_num, 0))) AS total_revenue,
     COUNT(DISTINCT oc.customer_key) AS customers,
-    AVG(old.discount) AS avg_discount,
-    COUNT(DISTINCT olp.product_key) AS product_breadth,
-    COUNT(DISTINCT et.territory_key) AS territories
-  FROM employee_names en
-  JOIN order_employee oe ON en.employee_key = oe.employee_key
-  JOIN order_dates od ON oe.order_key = od.order_key
-  JOIN order_line_order olo ON oe.order_key = olo.order_key
-  JOIN order_line_details old ON olo.order_line_key = old.order_line_key
-  JOIN order_customer oc ON oe.order_key = oc.order_key
-  JOIN order_line_product olp ON olo.order_line_key = olp.order_line_key
-  LEFT JOIN employee_territory et ON en.employee_key = et.employee_key
-  GROUP BY en.employee_key
+    AVG(oldisc.val_num) AS avg_discount,
+    COUNT(DISTINCT olp.product_key) AS product_breadth
+  FROM daana_dw.order_employee_x oe
+  JOIN daana_dw.order_desc od
+    ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+    AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+  JOIN daana_dw.order_customer_x oc
+    ON oe.order_key = oc.order_key
+    AND oc.type_key = 15 AND oc.row_st = 'Y'
+  JOIN daana_dw.order_line_order_x olo
+    ON oe.order_key = olo.order_key
+    AND olo.type_key = 72 AND olo.row_st = 'Y'
+  JOIN daana_dw.order_line_desc old
+    ON olo.order_line_key = old.order_line_key
+    AND old.type_key = 64 AND old.row_st = 'Y'
+  JOIN daana_dw.order_line_desc olq
+    ON olo.order_line_key = olq.order_line_key
+    AND olq.type_key = 55 AND olq.row_st = 'Y'
+  LEFT JOIN daana_dw.order_line_desc oldisc
+    ON olo.order_line_key = oldisc.order_line_key
+    AND oldisc.type_key = 62 AND oldisc.row_st = 'Y'
+  LEFT JOIN daana_dw.order_line_product_x olp
+    ON olo.order_line_key = olp.order_line_key
+    AND olp.type_key = 28 AND olp.row_st = 'Y'
+  WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+  GROUP BY oe.employee_key
 ),
-retention AS (
+order_metrics_ext AS (
   SELECT
-    cyc.employee_key,
-    100.0 * COUNT(DISTINCT CASE WHEN pyc.customer_key IS NOT NULL
-      THEN cyc.customer_key END)
-      / NULLIF(COUNT(DISTINCT cyc.customer_key), 0) AS retention_pct
-  FROM curr_year_customers cyc
-  LEFT JOIN prev_year_customers pyc
-    ON cyc.employee_key = pyc.employee_key
-    AND cyc.customer_key = pyc.customer_key
-  GROUP BY cyc.employee_key
+    employee_key, orders, total_revenue,
+    total_revenue / NULLIF(orders, 0) AS avg_order_size,
+    customers, avg_discount, product_breadth,
+    orders::FLOAT / NULLIF(customers, 0) AS order_frequency
+  FROM order_metrics
+),
+territory_metrics AS (
+  SELECT et.employee_key, COUNT(DISTINCT et.territory_key) AS territories
+  FROM daana_dw.employee_territory_x et
+  WHERE et.type_key = 26 AND et.row_st = 'Y'
+  GROUP BY et.employee_key
+),
+customers_1996 AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM daana_dw.order_employee_x oe
+  JOIN daana_dw.order_desc od
+    ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= CAST('1996-01-01' AS TIMESTAMP)
+    AND od.sta_tmstp < CAST('1997-01-01' AS TIMESTAMP)
+  JOIN daana_dw.order_customer_x oc
+    ON oe.order_key = oc.order_key AND oc.type_key = 15 AND oc.row_st = 'Y'
+  WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+),
+customers_1997 AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM daana_dw.order_employee_x oe
+  JOIN daana_dw.order_desc od
+    ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+    AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+  JOIN daana_dw.order_customer_x oc
+    ON oe.order_key = oc.order_key AND oc.type_key = 15 AND oc.row_st = 'Y'
+  WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+),
+retention_metrics AS (
+  SELECT c97.employee_key,
+    COUNT(DISTINCT CASE WHEN c96.customer_key IS NOT NULL THEN c97.customer_key END)::FLOAT
+      / NULLIF(COUNT(DISTINCT c97.customer_key), 0) AS customer_retention
+  FROM customers_1997 c97
+  LEFT JOIN customers_1996 c96
+    ON c97.employee_key = c96.employee_key AND c97.customer_key = c96.customer_key
+  GROUP BY c97.employee_key
 ),
 combined AS (
-  SELECT em.*, r.retention_pct,
-    em.orders::numeric / NULLIF(em.customers, 0) AS order_frequency
-  FROM employee_metrics em
-  JOIN retention r ON em.employee_key = r.employee_key
+  SELECT om.*, COALESCE(tm.territories, 0) AS territories,
+    COALESCE(rm.customer_retention, 0) AS customer_retention
+  FROM order_metrics_ext om
+  LEFT JOIN territory_metrics tm ON om.employee_key = tm.employee_key
+  LEFT JOIN retention_metrics rm ON om.employee_key = rm.employee_key
 )
-SELECT
-  ROUND(CORR(total_revenue, orders)::numeric, 2) AS r_orders,
-  ROUND(CORR(total_revenue, avg_order_size)::numeric, 2) AS r_avg_order,
-  ROUND(CORR(total_revenue, customers)::numeric, 2) AS r_customers,
-  ROUND(CORR(total_revenue, avg_discount)::numeric, 2) AS r_discount,
-  ROUND(CORR(total_revenue, product_breadth)::numeric, 2) AS r_products,
-  ROUND(CORR(total_revenue, retention_pct)::numeric, 2) AS r_retention,
-  ROUND(CORR(total_revenue, order_frequency)::numeric, 2) AS r_frequency,
-  ROUND(CORR(total_revenue, territories)::numeric, 2) AS r_territories
-FROM combined
+SELECT 'orders' AS metric, ROUND(CORR(orders, total_revenue)::NUMERIC, 2) AS pearson_r FROM combined
+UNION ALL SELECT 'avg_order_size', ROUND(CORR(avg_order_size, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'customers', ROUND(CORR(customers, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'avg_discount', ROUND(CORR(avg_discount, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'product_breadth', ROUND(CORR(product_breadth, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'customer_retention', ROUND(CORR(customer_retention, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'order_frequency', ROUND(CORR(order_frequency, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'territories', ROUND(CORR(territories, total_revenue)::NUMERIC, 2) FROM combined
+ORDER BY pearson_r DESC
 ```
 
 </details>
@@ -212,51 +207,62 @@ Anne Dodsworth       $26,310  ████████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Total revenue per employee for 1997, ordered by revenue descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
+SELECT
+  emp_name.first_name || ' ' || emp_name.last_name AS employee_name,
+  ROUND(SUM(ol_price.order_line_unit_price * ol_qty.quantity * (1 - COALESCE(ol_disc.discount, 0)))::numeric, 2) AS total_revenue
+FROM daana_dw.order_employee_x oe
+JOIN daana_dw.order_desc od
+  ON oe.order_key = od.order_key AND od.type_key = 3 AND od.row_st = 'Y'
+  AND EXTRACT(YEAR FROM od.sta_tmstp) = 1997
+JOIN daana_dw.order_line_order_x olo
+  ON oe.order_key = olo.order_key AND olo.type_key = 72 AND olo.row_st = 'Y'
+JOIN (
+  SELECT order_line_key, val_num AS order_line_unit_price
+  FROM (
+    SELECT order_line_key, val_num,
+      RANK() OVER (PARTITION BY order_line_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_line_desc WHERE type_key = 64
+  ) a WHERE nbr = 1 AND row_st = 'Y'
+) ol_price ON olo.order_line_key = ol_price.order_line_key
+JOIN (
+  SELECT order_line_key, val_num AS quantity
+  FROM (
+    SELECT order_line_key, val_num,
+      RANK() OVER (PARTITION BY order_line_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_line_desc WHERE type_key = 55
+  ) a WHERE nbr = 1 AND row_st = 'Y'
+) ol_qty ON olo.order_line_key = ol_qty.order_line_key
+LEFT JOIN (
+  SELECT order_line_key, val_num AS discount
+  FROM (
+    SELECT order_line_key, val_num,
+      RANK() OVER (PARTITION BY order_line_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_line_desc WHERE type_key = 62
+  ) a WHERE nbr = 1 AND row_st = 'Y'
+) ol_disc ON olo.order_line_key = ol_disc.order_line_key
+JOIN (
   SELECT employee_key,
     MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
     MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  FROM (
+    SELECT employee_key, type_key, val_str,
+      RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.employee_desc WHERE type_key IN (63, 10)
+  ) a WHERE nbr = 1 AND row_st = 'Y'
   GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_line_order AS (
-  SELECT order_line_key, order_key
-  FROM daana_dw.order_line_order_x
-  WHERE type_key = 72 AND row_st = 'Y'
-),
-order_line_details AS (
-  SELECT order_line_key,
-    MAX(CASE WHEN type_key = 55 THEN val_num END) AS quantity,
-    MAX(CASE WHEN type_key = 64 THEN val_num END) AS unit_price,
-    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
-  FROM daana_dw.order_line_desc
-  WHERE type_key IN (55, 64, 62) AND row_st = 'Y'
-  GROUP BY order_line_key
-)
-SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  ROUND(SUM(old.quantity * old.unit_price * (1 - old.discount))::numeric, 2) AS total_revenue
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-JOIN order_line_order olo ON oe.order_key = olo.order_key
-JOIN order_line_details old ON olo.order_line_key = old.order_line_key
-GROUP BY en.first_name, en.last_name
+) emp_name ON oe.employee_key = emp_name.employee_key
+WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+GROUP BY emp_name.first_name, emp_name.last_name
 ORDER BY total_revenue DESC
 ```
 
@@ -279,36 +285,47 @@ Steven Buchanan     18  ████████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Number of orders handled per employee in 1997, ordered by count descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-)
 SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  COUNT(DISTINCT oe.order_key) AS orders
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-GROUP BY en.first_name, en.last_name
-ORDER BY orders DESC
+  ed_first.val_str AS first_name,
+  ed_last.val_str AS last_name,
+  COUNT(DISTINCT rx.order_key) AS order_count
+FROM daana_dw.order_employee_x rx
+JOIN daana_dw.order_desc od
+  ON rx.order_key = od.order_key
+  AND od.type_key = 3 AND od.row_st = 'Y'
+  AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+  AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+JOIN (
+  SELECT employee_key, type_key, val_str,
+    RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr,
+    row_st
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10)
+) ed_first
+  ON rx.employee_key = ed_first.employee_key
+  AND ed_first.type_key = 63 AND ed_first.nbr = 1 AND ed_first.row_st = 'Y'
+JOIN (
+  SELECT employee_key, type_key, val_str,
+    RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr,
+    row_st
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10)
+) ed_last
+  ON rx.employee_key = ed_last.employee_key
+  AND ed_last.type_key = 10 AND ed_last.nbr = 1 AND ed_last.row_st = 'Y'
+WHERE rx.type_key = 5 AND rx.row_st = 'Y'
+GROUP BY ed_first.val_str, ed_last.val_str
+ORDER BY order_count DESC
 ```
 
 </details>
@@ -330,51 +347,75 @@ Laura Callahan      $1,038  █████████████████�
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Average order size (revenue per order) per employee for 1997, ordered by average descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
+WITH order_revenue AS (
+  SELECT
+    olox.order_key,
+    SUM(
+      CASE WHEN old_up.type_key = 64 THEN old_up.val_num END
+      * CASE WHEN old_q.type_key = 55 THEN old_q.val_num END
+      * (1 - COALESCE(CASE WHEN old_d.type_key = 62 THEN old_d.val_num END, 0))
+    ) AS order_total
+  FROM daana_dw.order_line_order_x olox
+  JOIN (
+    SELECT order_line_key, type_key, val_num,
+      RANK() OVER (PARTITION BY order_line_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_line_desc WHERE type_key IN (64)
+  ) old_up ON olox.order_line_key = old_up.order_line_key AND old_up.nbr = 1 AND old_up.row_st = 'Y'
+  JOIN (
+    SELECT order_line_key, type_key, val_num,
+      RANK() OVER (PARTITION BY order_line_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_line_desc WHERE type_key IN (55)
+  ) old_q ON olox.order_line_key = old_q.order_line_key AND old_q.nbr = 1 AND old_q.row_st = 'Y'
+  LEFT JOIN (
+    SELECT order_line_key, type_key, val_num,
+      RANK() OVER (PARTITION BY order_line_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_line_desc WHERE type_key IN (62)
+  ) old_d ON olox.order_line_key = old_d.order_line_key AND old_d.nbr = 1 AND old_d.row_st = 'Y'
+  WHERE olox.type_key = 72 AND olox.row_st = 'Y'
+  GROUP BY olox.order_key
+),
+order_dates AS (
+  SELECT order_key, sta_tmstp AS order_date
+  FROM (
+    SELECT order_key, sta_tmstp,
+      RANK() OVER (PARTITION BY order_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.order_desc WHERE type_key = 3
+  ) a WHERE nbr = 1 AND row_st = 'Y'
 ),
 order_employee AS (
   SELECT order_key, employee_key
   FROM daana_dw.order_employee_x
   WHERE type_key = 5 AND row_st = 'Y'
 ),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_line_order AS (
-  SELECT order_line_key, order_key
-  FROM daana_dw.order_line_order_x
-  WHERE type_key = 72 AND row_st = 'Y'
-),
-order_line_details AS (
-  SELECT order_line_key,
-    MAX(CASE WHEN type_key = 55 THEN val_num END) AS quantity,
-    MAX(CASE WHEN type_key = 64 THEN val_num END) AS unit_price,
-    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
-  FROM daana_dw.order_line_desc
-  WHERE type_key IN (55, 64, 62) AND row_st = 'Y'
-  GROUP BY order_line_key
+employee_names AS (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
+    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
+  FROM (
+    SELECT employee_key, type_key, val_str,
+      RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr, row_st
+    FROM daana_dw.employee_desc WHERE type_key IN (63, 10)
+  ) a WHERE nbr = 1 AND row_st = 'Y'
+  GROUP BY employee_key
 )
 SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  ROUND((SUM(old.quantity * old.unit_price * (1 - old.discount))
-    / COUNT(DISTINCT oe.order_key))::numeric, 2) AS avg_order_size
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-JOIN order_line_order olo ON oe.order_key = olo.order_key
-JOIN order_line_details old ON olo.order_line_key = old.order_line_key
+  en.first_name || ' ' || en.last_name AS employee_name,
+  ROUND((SUM(orv.order_total) / COUNT(DISTINCT orv.order_key))::numeric, 2) AS avg_order_size
+FROM order_revenue orv
+JOIN order_dates od ON orv.order_key = od.order_key
+JOIN order_employee oe ON orv.order_key = oe.order_key
+JOIN employee_names en ON oe.employee_key = en.employee_key
+WHERE EXTRACT(YEAR FROM od.order_date) = 1997
 GROUP BY en.first_name, en.last_name
 ORDER BY avg_order_size DESC
 ```
@@ -398,42 +439,43 @@ Steven Buchanan     13  █████████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Distinct customers served per employee in 1997, ordered by count descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_customer AS (
-  SELECT order_key, customer_key
-  FROM daana_dw.order_customer_x
-  WHERE type_key = 15 AND row_st = 'Y'
-)
 SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  COUNT(DISTINCT oc.customer_key) AS customers
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-JOIN order_customer oc ON oe.order_key = oc.order_key
-GROUP BY en.first_name, en.last_name
-ORDER BY customers DESC
+  ed_fn.val_str || ' ' || ed_ln.val_str AS employee_name,
+  COUNT(DISTINCT ocx.customer_key) AS distinct_customers
+FROM daana_dw.order_employee_x oex
+JOIN daana_dw.order_customer_x ocx
+  ON oex.order_key = ocx.order_key
+  AND ocx.type_key = 15 AND ocx.row_st = 'Y'
+JOIN daana_dw.order_desc od
+  ON oex.order_key = od.order_key
+  AND od.type_key = 3 AND od.row_st = 'Y'
+  AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+  AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+JOIN (
+  SELECT employee_key, val_str,
+    RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+  FROM daana_dw.employee_desc
+  WHERE type_key = 63
+) ed_fn ON oex.employee_key = ed_fn.employee_key AND ed_fn.nbr = 1
+JOIN (
+  SELECT employee_key, val_str,
+    RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+  FROM daana_dw.employee_desc
+  WHERE type_key = 10
+) ed_ln ON oex.employee_key = ed_ln.employee_key AND ed_ln.nbr = 1
+WHERE oex.type_key = 5 AND oex.row_st = 'Y'
+GROUP BY ed_fn.val_str, ed_ln.val_str
+ORDER BY distinct_customers DESC
 ```
 
 </details>
@@ -457,49 +499,57 @@ Anne Dodsworth      9.0%  ██████████████████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Average discount percentage per employee for 1997 order lines, ordered by discount ascending (lowest first).
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_line_order AS (
+SELECT
+  emp_name.employee_name,
+  AVG(ol_disc.discount) AS avg_discount_pct
+FROM (
+  SELECT order_line_key, val_num AS discount
+  FROM daana_dw.order_line_desc
+  WHERE type_key = 62 AND row_st = 'Y'
+) ol_disc
+JOIN (
   SELECT order_line_key, order_key
   FROM daana_dw.order_line_order_x
   WHERE type_key = 72 AND row_st = 'Y'
-),
-order_line_details AS (
-  SELECT order_line_key,
-    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
-  FROM daana_dw.order_line_desc
-  WHERE type_key = 62 AND row_st = 'Y'
-  GROUP BY order_line_key
-)
-SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  ROUND(AVG(old.discount)::numeric * 100, 1) AS avg_discount_pct
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-JOIN order_line_order olo ON oe.order_key = olo.order_key
-JOIN order_line_details old ON olo.order_line_key = old.order_line_key
-GROUP BY en.first_name, en.last_name
+) olo ON ol_disc.order_line_key = olo.order_line_key
+JOIN (
+  SELECT order_key, sta_tmstp AS order_date
+  FROM (
+    SELECT order_key, sta_tmstp,
+      RANK() OVER (PARTITION BY order_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_desc
+    WHERE type_key = 3
+  ) a WHERE nbr = 1 AND a.sta_tmstp IS NOT NULL
+) od ON olo.order_key = od.order_key
+JOIN (
+  SELECT order_key, employee_key
+  FROM daana_dw.order_employee_x
+  WHERE type_key = 5 AND row_st = 'Y'
+) oe ON olo.order_key = oe.order_key
+JOIN (
+  SELECT employee_key,
+    MAX(CASE WHEN type_key = 63 THEN val_str END) || ' ' || MAX(CASE WHEN type_key = 10 THEN val_str END) AS employee_name
+  FROM (
+    SELECT employee_key, type_key, val_str,
+      RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr,
+      row_st
+    FROM daana_dw.employee_desc
+    WHERE type_key IN (63, 10)
+  ) e WHERE nbr = 1 AND row_st = 'Y'
+  GROUP BY employee_key
+) emp_name ON oe.employee_key = emp_name.employee_key
+WHERE EXTRACT(YEAR FROM od.order_date) = 1997
+GROUP BY emp_name.employee_name
 ORDER BY avg_discount_pct ASC
 ```
 
@@ -524,48 +574,47 @@ Anne Dodsworth      30  █████████████████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Distinct products sold per employee in 1997, ordered by count descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
+SELECT
+  emp_name.first_name,
+  emp_name.last_name,
+  COUNT(DISTINCT olp.product_key) AS distinct_products_sold
+FROM daana_dw.order_employee_x oe
+JOIN daana_dw.order_desc od
+  ON oe.order_key = od.order_key
+  AND od.type_key = 3 AND od.row_st = 'Y'
+  AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+  AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+JOIN daana_dw.order_line_order_x olo
+  ON oe.order_key = olo.order_key
+  AND olo.type_key = 72 AND olo.row_st = 'Y'
+JOIN daana_dw.order_line_product_x olp
+  ON olo.order_line_key = olp.order_line_key
+  AND olp.type_key = 28 AND olp.row_st = 'Y'
+JOIN (
   SELECT employee_key,
     MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
     MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  FROM (
+    SELECT employee_key, type_key, val_str, row_st,
+      RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.employee_desc
+    WHERE type_key IN (63, 10)
+  ) a WHERE nbr = 1 AND row_st = 'Y'
   GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_line_order AS (
-  SELECT order_line_key, order_key
-  FROM daana_dw.order_line_order_x
-  WHERE type_key = 72 AND row_st = 'Y'
-),
-order_line_product AS (
-  SELECT order_line_key, product_key
-  FROM daana_dw.order_line_product_x
-  WHERE type_key = 28 AND row_st = 'Y'
-)
-SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  COUNT(DISTINCT olp.product_key) AS distinct_products
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-JOIN order_line_order olo ON oe.order_key = olo.order_key
-JOIN order_line_product olp ON olo.order_line_key = olp.order_line_key
-GROUP BY en.first_name, en.last_name
-ORDER BY distinct_products DESC
+) emp_name ON oe.employee_key = emp_name.employee_key
+WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+GROUP BY emp_name.first_name, emp_name.last_name
+ORDER BY distinct_products_sold DESC
 ```
 
 </details>
@@ -589,6 +638,13 @@ Anne Dodsworth       6.3%  ███████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Customer retention rate per employee: percentage of 1997 customers who were also served in 1996, ordered by retention descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
@@ -596,53 +652,63 @@ WITH employee_names AS (
   SELECT employee_key,
     MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
     MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  FROM (
+    SELECT employee_key, type_key, val_str, row_st,
+           RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.employee_desc WHERE type_key IN (63, 10)
+  ) a WHERE nbr = 1 AND row_st = 'Y'
   GROUP BY employee_key
+),
+order_dates AS (
+  SELECT order_key, sta_tmstp AS order_date
+  FROM (
+    SELECT order_key, sta_tmstp, row_st,
+           RANK() OVER (PARTITION BY order_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_desc WHERE type_key = 3
+  ) a WHERE nbr = 1 AND row_st = 'Y'
 ),
 order_employee AS (
   SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+  FROM (
+    SELECT order_key, employee_key, row_st,
+           RANK() OVER (PARTITION BY order_key, employee_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_employee_x WHERE type_key = 5
+  ) a WHERE nbr = 1 AND row_st = 'Y'
 ),
 order_customer AS (
   SELECT order_key, customer_key
-  FROM daana_dw.order_customer_x
-  WHERE type_key = 15 AND row_st = 'Y'
+  FROM (
+    SELECT order_key, customer_key, row_st,
+           RANK() OVER (PARTITION BY order_key, customer_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_customer_x WHERE type_key = 15
+  ) a WHERE nbr = 1 AND row_st = 'Y'
 ),
-prev_year_customers AS (
+customers_1996 AS (
   SELECT DISTINCT oe.employee_key, oc.customer_key
   FROM order_employee oe
-  JOIN daana_dw.order_desc od ON oe.order_key = od.order_key
-    AND od.type_key = 3 AND od.row_st = 'Y'
-    AND od.sta_tmstp >= '1996-01-01' AND od.sta_tmstp < '1997-01-01'
   JOIN order_customer oc ON oe.order_key = oc.order_key
-),
-curr_year_customers AS (
-  SELECT DISTINCT oe.employee_key, oc.customer_key
-  FROM order_employee oe
   JOIN order_dates od ON oe.order_key = od.order_key
+  WHERE EXTRACT(YEAR FROM od.order_date) = 1996
+),
+customers_1997 AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM order_employee oe
   JOIN order_customer oc ON oe.order_key = oc.order_key
+  JOIN order_dates od ON oe.order_key = od.order_key
+  WHERE EXTRACT(YEAR FROM od.order_date) = 1997
 )
 SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  COUNT(DISTINCT CASE WHEN pyc.customer_key IS NOT NULL
-    THEN cyc.customer_key END) AS retained,
-  COUNT(DISTINCT cyc.customer_key) AS total,
-  ROUND(100.0 * COUNT(DISTINCT CASE WHEN pyc.customer_key IS NOT NULL
-    THEN cyc.customer_key END)
-    / NULLIF(COUNT(DISTINCT cyc.customer_key), 0), 1) AS retention_pct
-FROM employee_names en
-JOIN curr_year_customers cyc ON en.employee_key = cyc.employee_key
-LEFT JOIN prev_year_customers pyc
-  ON en.employee_key = pyc.employee_key
-  AND cyc.customer_key = pyc.customer_key
+  en.first_name || ' ' || en.last_name AS employee_name,
+  COUNT(DISTINCT c97.customer_key) AS customers_1997,
+  COUNT(DISTINCT CASE WHEN c96.customer_key IS NOT NULL THEN c97.customer_key END) AS retained_from_1996,
+  ROUND(
+    100.0 * COUNT(DISTINCT CASE WHEN c96.customer_key IS NOT NULL THEN c97.customer_key END)
+    / NULLIF(COUNT(DISTINCT c97.customer_key), 0), 1
+  ) AS retention_pct
+FROM customers_1997 c97
+JOIN employee_names en ON c97.employee_key = en.employee_key
+LEFT JOIN customers_1996 c96
+  ON c97.employee_key = c96.employee_key AND c97.customer_key = c96.customer_key
 GROUP BY en.first_name, en.last_name
 ORDER BY retention_pct DESC
 ```
@@ -656,16 +722,23 @@ ORDER BY retention_pct DESC
 Orders per customer — measures engagement depth.
 
 ```
-Janet Leverling     1.5  ████████████████████████████████████████
-Laura Callahan      1.5  ████████████████████████████████████████
-Margaret Peacock    1.4  █████████████████████████████████████
-Nancy Davolio       1.4  █████████████████████████████████████
-Michael Suyama      1.4  █████████████████████████████████████
-Steven Buchanan     1.4  █████████████████████████████████████
-Andrew Fuller       1.2  ████████████████████████████████
-Anne Dodsworth      1.2  ████████████████████████████████
-Robert King         1.2  ████████████████████████████████
+Janet Leverling     1.54  ████████████████████████████████████████
+Laura Callahan      1.50  ██████████████████████████████████████
+Margaret Peacock    1.42  ████████████████████████████████████
+Steven Buchanan     1.38  ███████████████████████████████████
+Nancy Davolio       1.38  ███████████████████████████████████
+Michael Suyama      1.38  ███████████████████████████████████
+Robert King         1.20  ██████████████████████████████
+Anne Dodsworth      1.19  █████████████████████████████
+Andrew Fuller       1.17  █████████████████████████████
 ```
+
+<details>
+<summary>Show prompt</summary>
+
+> Average number of orders per customer per employee in 1997 (calculated as total distinct orders divided by total distinct customers for each employee), ordered by ratio descending.
+
+</details>
 
 <details>
 <summary>Show query</summary>
@@ -675,35 +748,46 @@ WITH employee_names AS (
   SELECT employee_key,
     MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
     MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
+  FROM (
+    SELECT employee_key, type_key, val_str, row_st,
+           RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.employee_desc WHERE type_key IN (63, 10)
+  ) a WHERE nbr = 1 AND row_st = 'Y'
   GROUP BY employee_key
+),
+orders_1997 AS (
+  SELECT order_key
+  FROM (
+    SELECT order_key, sta_tmstp, row_st,
+           RANK() OVER (PARTITION BY order_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_desc WHERE type_key = 3
+  ) a WHERE nbr = 1 AND row_st = 'Y'
+    AND EXTRACT(YEAR FROM sta_tmstp) = 1997
 ),
 order_employee AS (
   SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
+  FROM (
+    SELECT order_key, employee_key, row_st,
+           RANK() OVER (PARTITION BY order_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_employee_x WHERE type_key = 5
+  ) a WHERE nbr = 1 AND row_st = 'Y'
 ),
 order_customer AS (
   SELECT order_key, customer_key
-  FROM daana_dw.order_customer_x
-  WHERE type_key = 15 AND row_st = 'Y'
+  FROM (
+    SELECT order_key, customer_key, row_st,
+           RANK() OVER (PARTITION BY order_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr
+    FROM daana_dw.order_customer_x WHERE type_key = 15
+  ) a WHERE nbr = 1 AND row_st = 'Y'
 )
 SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  ROUND(COUNT(DISTINCT oe.order_key)::numeric
-    / NULLIF(COUNT(DISTINCT oc.customer_key), 0), 1) AS orders_per_customer
-FROM employee_names en
-JOIN order_employee oe ON en.employee_key = oe.employee_key
-JOIN order_dates od ON oe.order_key = od.order_key
-JOIN order_customer oc ON oe.order_key = oc.order_key
-GROUP BY en.first_name, en.last_name
+  en.first_name || ' ' || en.last_name AS employee_name,
+  ROUND(COUNT(DISTINCT o1997.order_key)::numeric / NULLIF(COUNT(DISTINCT oc.customer_key), 0), 2) AS orders_per_customer
+FROM orders_1997 o1997
+JOIN order_employee oe ON o1997.order_key = oe.order_key
+JOIN employee_names en ON oe.employee_key = en.employee_key
+JOIN order_customer oc ON o1997.order_key = oc.order_key
+GROUP BY en.employee_key, en.first_name, en.last_name
 ORDER BY orders_per_customer DESC
 ```
 
@@ -728,29 +812,33 @@ Nancy Davolio        2  ████████
 ```
 
 <details>
+<summary>Show prompt</summary>
+
+> Number of territories assigned per employee, ordered by count descending.
+
+</details>
+
+<details>
 <summary>Show query</summary>
 
 ```sql
-WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
-),
-employee_territory AS (
-  SELECT employee_key, territory_key
-  FROM daana_dw.employee_territory_x
-  WHERE type_key = 26 AND row_st = 'Y'
-)
 SELECT
-  en.first_name || ' ' || en.last_name AS employee,
-  COUNT(DISTINCT et.territory_key) AS territories
-FROM employee_names en
-LEFT JOIN employee_territory et ON en.employee_key = et.employee_key
-GROUP BY en.first_name, en.last_name
-ORDER BY territories DESC
+  MAX(CASE WHEN ed.type_key = 63 THEN ed.val_str END) AS first_name,
+  MAX(CASE WHEN ed.type_key = 10 THEN ed.val_str END) AS last_name,
+  COUNT(DISTINCT et.territory_key) AS territory_count
+FROM daana_dw.employee_territory_x et
+JOIN (
+  SELECT employee_key, type_key, val_str,
+    RANK() OVER (PARTITION BY employee_key, type_key ORDER BY eff_tmstp DESC, ver_tmstp DESC) AS nbr,
+    row_st
+  FROM daana_dw.employee_desc
+  WHERE type_key IN (63, 10)
+) ed
+  ON et.employee_key = ed.employee_key
+  AND ed.nbr = 1 AND ed.row_st = 'Y'
+WHERE et.type_key = 26 AND et.row_st = 'Y'
+GROUP BY ed.employee_key
+ORDER BY territory_count DESC
 ```
 
 </details>

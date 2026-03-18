@@ -15,15 +15,15 @@
   strength: strong
 
 - metric: Order Frequency
-  r: 0.36
-  strength: weak
+  r: 0.43
+  strength: moderate
 
 - metric: Avg Order Size
   r: 0.27
   strength: weak
 
 - metric: Avg Discount
-  r: -0.54
+  r: -0.53
   strength: moderate (negative)
 
 - metric: Territory Coverage

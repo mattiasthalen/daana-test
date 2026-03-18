@@ -19,118 +19,110 @@
 </div>
 
 <details>
+  <summary>Show prompt</summary>
+  <p>Pearson correlation of each employee metric (orders, avg order size, customers, avg discount, product breadth, customer retention, order frequency, territories) with total revenue across all 9 employees for 1997.</p>
+</details>
+
+<details>
   <summary>SQL Query</summary>
-  <pre><code>WITH employee_names AS (
-  SELECT employee_key,
-    MAX(CASE WHEN type_key = 63 THEN val_str END) AS first_name,
-    MAX(CASE WHEN type_key = 10 THEN val_str END) AS last_name
-  FROM daana_dw.employee_desc
-  WHERE type_key IN (63, 10) AND row_st = 'Y'
-  GROUP BY employee_key
-),
-order_employee AS (
-  SELECT order_key, employee_key
-  FROM daana_dw.order_employee_x
-  WHERE type_key = 5 AND row_st = 'Y'
-),
-order_dates AS (
-  SELECT order_key
-  FROM daana_dw.order_desc
-  WHERE type_key = 3 AND row_st = 'Y'
-    AND sta_tmstp >= '1997-01-01' AND sta_tmstp < '1998-01-01'
-),
-order_customer AS (
-  SELECT order_key, customer_key
-  FROM daana_dw.order_customer_x
-  WHERE type_key = 15 AND row_st = 'Y'
-),
-order_line_order AS (
-  SELECT order_line_key, order_key
-  FROM daana_dw.order_line_order_x
-  WHERE type_key = 72 AND row_st = 'Y'
-),
-order_line_details AS (
-  SELECT order_line_key,
-    MAX(CASE WHEN type_key = 55 THEN val_num END) AS quantity,
-    MAX(CASE WHEN type_key = 64 THEN val_num END) AS unit_price,
-    MAX(CASE WHEN type_key = 62 THEN val_num END) AS discount
-  FROM daana_dw.order_line_desc
-  WHERE type_key IN (55, 64, 62) AND row_st = 'Y'
-  GROUP BY order_line_key
-),
-order_line_product AS (
-  SELECT order_line_key, product_key
-  FROM daana_dw.order_line_product_x
-  WHERE type_key = 28 AND row_st = 'Y'
-),
-employee_territory AS (
-  SELECT employee_key, territory_key
-  FROM daana_dw.employee_territory_x
-  WHERE type_key = 26 AND row_st = 'Y'
-),
-prev_year_customers AS (
-  SELECT DISTINCT oe.employee_key, oc.customer_key
-  FROM order_employee oe
-  JOIN daana_dw.order_desc od ON oe.order_key = od.order_key
-    AND od.type_key = 3 AND od.row_st = 'Y'
-    AND od.sta_tmstp >= '1996-01-01' AND od.sta_tmstp < '1997-01-01'
-  JOIN order_customer oc ON oe.order_key = oc.order_key
-),
-curr_year_customers AS (
-  SELECT DISTINCT oe.employee_key, oc.customer_key
-  FROM order_employee oe
-  JOIN order_dates od ON oe.order_key = od.order_key
-  JOIN order_customer oc ON oe.order_key = oc.order_key
-),
-employee_metrics AS (
+  <pre><code>WITH
+order_metrics AS (
   SELECT
-    en.employee_key,
-    SUM(old.quantity * old.unit_price * (1 - old.discount)) AS total_revenue,
+    oe.employee_key,
     COUNT(DISTINCT oe.order_key) AS orders,
-    SUM(old.quantity * old.unit_price * (1 - old.discount))
-      / COUNT(DISTINCT oe.order_key) AS avg_order_size,
+    SUM(old.val_num * olq.val_num * (1 - COALESCE(oldisc.val_num, 0))) AS total_revenue,
     COUNT(DISTINCT oc.customer_key) AS customers,
-    AVG(old.discount) AS avg_discount,
-    COUNT(DISTINCT olp.product_key) AS product_breadth,
-    COUNT(DISTINCT et.territory_key) AS territories
-  FROM employee_names en
-  JOIN order_employee oe ON en.employee_key = oe.employee_key
-  JOIN order_dates od ON oe.order_key = od.order_key
-  JOIN order_line_order olo ON oe.order_key = olo.order_key
-  JOIN order_line_details old ON olo.order_line_key = old.order_line_key
-  JOIN order_customer oc ON oe.order_key = oc.order_key
-  JOIN order_line_product olp ON olo.order_line_key = olp.order_line_key
-  LEFT JOIN employee_territory et ON en.employee_key = et.employee_key
-  GROUP BY en.employee_key
+    AVG(oldisc.val_num) AS avg_discount,
+    COUNT(DISTINCT olp.product_key) AS product_breadth
+  FROM daana_dw.order_employee_x oe
+  JOIN daana_dw.order_desc od
+    ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+    AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+  JOIN daana_dw.order_customer_x oc
+    ON oe.order_key = oc.order_key
+    AND oc.type_key = 15 AND oc.row_st = 'Y'
+  JOIN daana_dw.order_line_order_x olo
+    ON oe.order_key = olo.order_key
+    AND olo.type_key = 72 AND olo.row_st = 'Y'
+  JOIN daana_dw.order_line_desc old
+    ON olo.order_line_key = old.order_line_key
+    AND old.type_key = 64 AND old.row_st = 'Y'
+  JOIN daana_dw.order_line_desc olq
+    ON olo.order_line_key = olq.order_line_key
+    AND olq.type_key = 55 AND olq.row_st = 'Y'
+  LEFT JOIN daana_dw.order_line_desc oldisc
+    ON olo.order_line_key = oldisc.order_line_key
+    AND oldisc.type_key = 62 AND oldisc.row_st = 'Y'
+  LEFT JOIN daana_dw.order_line_product_x olp
+    ON olo.order_line_key = olp.order_line_key
+    AND olp.type_key = 28 AND olp.row_st = 'Y'
+  WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+  GROUP BY oe.employee_key
 ),
-retention AS (
-  SELECT
-    cyc.employee_key,
-    100.0 * COUNT(DISTINCT CASE WHEN pyc.customer_key IS NOT NULL
-      THEN cyc.customer_key END)
-      / NULLIF(COUNT(DISTINCT cyc.customer_key), 0) AS retention_pct
-  FROM curr_year_customers cyc
-  LEFT JOIN prev_year_customers pyc
-    ON cyc.employee_key = pyc.employee_key
-    AND cyc.customer_key = pyc.customer_key
-  GROUP BY cyc.employee_key
+order_metrics_ext AS (
+  SELECT employee_key, orders, total_revenue,
+    total_revenue / NULLIF(orders, 0) AS avg_order_size,
+    customers, avg_discount, product_breadth,
+    orders::FLOAT / NULLIF(customers, 0) AS order_frequency
+  FROM order_metrics
+),
+territory_metrics AS (
+  SELECT et.employee_key, COUNT(DISTINCT et.territory_key) AS territories
+  FROM daana_dw.employee_territory_x et
+  WHERE et.type_key = 26 AND et.row_st = 'Y'
+  GROUP BY et.employee_key
+),
+customers_1996 AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM daana_dw.order_employee_x oe
+  JOIN daana_dw.order_desc od
+    ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= CAST('1996-01-01' AS TIMESTAMP)
+    AND od.sta_tmstp < CAST('1997-01-01' AS TIMESTAMP)
+  JOIN daana_dw.order_customer_x oc
+    ON oe.order_key = oc.order_key AND oc.type_key = 15 AND oc.row_st = 'Y'
+  WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+),
+customers_1997 AS (
+  SELECT DISTINCT oe.employee_key, oc.customer_key
+  FROM daana_dw.order_employee_x oe
+  JOIN daana_dw.order_desc od
+    ON oe.order_key = od.order_key
+    AND od.type_key = 3 AND od.row_st = 'Y'
+    AND od.sta_tmstp >= CAST('1997-01-01' AS TIMESTAMP)
+    AND od.sta_tmstp < CAST('1998-01-01' AS TIMESTAMP)
+  JOIN daana_dw.order_customer_x oc
+    ON oe.order_key = oc.order_key AND oc.type_key = 15 AND oc.row_st = 'Y'
+  WHERE oe.type_key = 5 AND oe.row_st = 'Y'
+),
+retention_metrics AS (
+  SELECT c97.employee_key,
+    COUNT(DISTINCT CASE WHEN c96.customer_key IS NOT NULL THEN c97.customer_key END)::FLOAT
+      / NULLIF(COUNT(DISTINCT c97.customer_key), 0) AS customer_retention
+  FROM customers_1997 c97
+  LEFT JOIN customers_1996 c96
+    ON c97.employee_key = c96.employee_key AND c97.customer_key = c96.customer_key
+  GROUP BY c97.employee_key
 ),
 combined AS (
-  SELECT em.*, r.retention_pct,
-    em.orders::numeric / NULLIF(em.customers, 0) AS order_frequency
-  FROM employee_metrics em
-  JOIN retention r ON em.employee_key = r.employee_key
+  SELECT om.*, COALESCE(tm.territories, 0) AS territories,
+    COALESCE(rm.customer_retention, 0) AS customer_retention
+  FROM order_metrics_ext om
+  LEFT JOIN territory_metrics tm ON om.employee_key = tm.employee_key
+  LEFT JOIN retention_metrics rm ON om.employee_key = rm.employee_key
 )
-SELECT
-  ROUND(CORR(total_revenue, orders)::numeric, 2) AS r_orders,
-  ROUND(CORR(total_revenue, avg_order_size)::numeric, 2) AS r_avg_order,
-  ROUND(CORR(total_revenue, customers)::numeric, 2) AS r_customers,
-  ROUND(CORR(total_revenue, avg_discount)::numeric, 2) AS r_discount,
-  ROUND(CORR(total_revenue, product_breadth)::numeric, 2) AS r_products,
-  ROUND(CORR(total_revenue, retention_pct)::numeric, 2) AS r_retention,
-  ROUND(CORR(total_revenue, order_frequency)::numeric, 2) AS r_frequency,
-  ROUND(CORR(total_revenue, territories)::numeric, 2) AS r_territories
-FROM combined</code></pre>
+SELECT 'orders' AS metric, ROUND(CORR(orders, total_revenue)::NUMERIC, 2) AS pearson_r FROM combined
+UNION ALL SELECT 'avg_order_size', ROUND(CORR(avg_order_size, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'customers', ROUND(CORR(customers, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'avg_discount', ROUND(CORR(avg_discount, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'product_breadth', ROUND(CORR(product_breadth, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'customer_retention', ROUND(CORR(customer_retention, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'order_frequency', ROUND(CORR(order_frequency, total_revenue)::NUMERIC, 2) FROM combined
+UNION ALL SELECT 'territories', ROUND(CORR(territories, total_revenue)::NUMERIC, 2) FROM combined
+ORDER BY pearson_r DESC</code></pre>
 </details>
 
 </section>
