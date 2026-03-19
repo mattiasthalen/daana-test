@@ -1,3 +1,23 @@
 daana-cli*.tar.gz
 *.log
 .worktrees/
+
+# IDE
+.idea
+.vscode
+
+# Claude Code
+.claude/agents
+.claude/commands
+.claude/skills
+
+# Shell/system dotfiles
+.bash_profile
+.bashrc
+.profile
+.zprofile
+.zshrc
+.gitconfig
+.gitmodules
+.ripgreprc
+.mcp.json

@@ -2,7 +2,7 @@ entity_id: "EMPLOYEE"
 
 mapping_groups:
   - name: "default_mapping_group"
-    allow_multiple_identifiers: false
+    allow_multiple_identifiers: true
 
     tables:
       - connection: "dev"
