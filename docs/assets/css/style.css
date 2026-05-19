@@ -17,6 +17,36 @@
   --row-hover: rgba(255, 255, 255, 0.03);
 }
 
+html[data-theme="light"] {
+  --bg: #ffffff;
+  --card: #f6f8fa;
+  --border: #d0d7de;
+  --accent: #0969da;
+  --positive: #1a7f37;
+  --warning: #bc4c00;
+  --text: #1f2328;
+  --muted: #656d76;
+  --chart-grid: rgba(0, 0, 0, 0.08);
+  --details-bg: #f6f8fa;
+  --row-hover: rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) {
+    --bg: #ffffff;
+    --card: #f6f8fa;
+    --border: #d0d7de;
+    --accent: #0969da;
+    --positive: #1a7f37;
+    --warning: #bc4c00;
+    --text: #1f2328;
+    --muted: #656d76;
+    --chart-grid: rgba(0, 0, 0, 0.08);
+    --details-bg: #f6f8fa;
+    --row-hover: rgba(0, 0, 0, 0.04);
+  }
+}
+
 /* Reset / Base */
 *,
 *::before,
