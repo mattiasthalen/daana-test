@@ -12,6 +12,9 @@
   --warning: #f0883e;
   --text: #e6edf3;
   --muted: #8b949e;
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --details-bg: #0a0e14;
+  --row-hover: rgba(255, 255, 255, 0.03);
 }
 
 /* Reset / Base */
@@ -166,7 +169,7 @@ body {
 }
 
 .summary-table tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--row-hover);
 }
 
 .summary-table .mono {
@@ -238,7 +241,7 @@ body {
 }
 
 .framework-table tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--row-hover);
 }
 
 .framework-table .mono {
@@ -263,7 +266,7 @@ details[open] summary {
 }
 
 details pre {
-  background: #0a0e14;
+  background: var(--details-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1rem;
