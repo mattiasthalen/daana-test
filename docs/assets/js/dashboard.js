@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   activate(location.hash.slice(1) || 'overview');
 
+  initThemeToggle();
   initThroughputCharts();
   initInputCharts();
   initCorrelationChart();
@@ -202,4 +203,61 @@ function initThroughputCharts() {
   renderBarChart('chart-avg-order', names, emps.map(e => e.avg_order), { prefix: '$' });
   renderBarChart('chart-customers', names, emps.map(e => e.customers));
   renderBarChart('chart-discount', names, emps.map(e => e.discount_pct), { suffix: '%', sortAsc: true });
+}
+
+function rerenderCharts() {
+  while (chartRegistry.length) {
+    chartRegistry.pop().destroy();
+  }
+  initThroughputCharts();
+  initInputCharts();
+  initCorrelationChart();
+}
+
+function initThemeToggle() {
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll('.theme-toggle__btn');
+  if (buttons.length === 0) return;
+
+  function readChoice() {
+    try {
+      const v = localStorage.getItem('theme');
+      return (v === 'light' || v === 'dark') ? v : 'system';
+    } catch (e) {
+      return 'system';
+    }
+  }
+
+  function apply(choice, { rerender = true } = {}) {
+    try {
+      if (choice === 'system') {
+        root.removeAttribute('data-theme');
+        localStorage.removeItem('theme');
+      } else {
+        root.setAttribute('data-theme', choice);
+        localStorage.setItem('theme', choice);
+      }
+    } catch (e) {
+      if (choice === 'system') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', choice);
+    }
+    buttons.forEach(b => {
+      const active = b.dataset.themeChoice === choice;
+      b.classList.toggle('theme-toggle__btn--active', active);
+      b.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+    if (rerender) rerenderCharts();
+  }
+
+  buttons.forEach(b => {
+    b.addEventListener('click', () => apply(b.dataset.themeChoice));
+  });
+
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (readChoice() === 'system') rerenderCharts();
+  });
+
+  // Sync button state on first load without tearing down charts that
+  // haven't been created yet.
+  apply(readChoice(), { rerender: false });
 }
