@@ -26,11 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   activate(location.hash.slice(1) || 'overview');
 
+  initThemeToggle();
   initThroughputCharts();
   initInputCharts();
   initCorrelationChart();
   formatMonoCells();
 });
+
+const cssVar = (name) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+const chartRegistry = [];
 
 /* Format dollar amounts and bare numbers in .mono table cells */
 function formatMonoCells() {
@@ -67,11 +73,13 @@ function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', so
 
   const sortedLabels = paired.map(p => p.label);
   const sortedValues = paired.map(p => p.value);
+  const accent = cssVar('--accent');
+  const positive = cssVar('--positive');
   const colors = sortedLabels.map(name =>
-    name === 'Margaret Peacock' ? '#00ff88' : '#00d4ff'
+    name === 'Margaret Peacock' ? positive : accent
   );
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: sortedLabels,
@@ -96,16 +104,18 @@ function renderBarChart(canvasId, labels, values, { prefix = '', suffix = '', so
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255,255,255,0.06)' },
-          ticks: { color: '#8b949e', font: { family: "'JetBrains Mono', monospace" } }
+          grid: { color: cssVar('--chart-grid') },
+          ticks: { color: cssVar('--muted'), font: { family: "'JetBrains Mono', monospace" } }
         },
         y: {
           grid: { display: false },
-          ticks: { color: '#e6edf3', font: { family: "'JetBrains Mono', monospace", size: 12 } }
+          ticks: { color: cssVar('--text'), font: { family: "'JetBrains Mono', monospace", size: 12 } }
         }
       }
     }
   });
+
+  chartRegistry.push(chart);
 }
 
 function initCorrelationChart() {
@@ -115,12 +125,14 @@ function initCorrelationChart() {
   const sorted = [...corrs].sort((a, b) => b.r - a.r);
   const labels = sorted.map(c => c.metric);
   const values = sorted.map(c => c.r);
-  const colors = values.map(v => v >= 0 ? '#00d4ff' : '#f0883e');
+  const accent = cssVar('--accent');
+  const warning = cssVar('--warning');
+  const colors = values.map(v => v >= 0 ? accent : warning);
 
   const ctx = document.getElementById('chart-correlations');
   if (!ctx) return;
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
@@ -150,20 +162,22 @@ function initCorrelationChart() {
         x: {
           min: -1,
           max: 1,
-          grid: { color: 'rgba(255,255,255,0.06)' },
+          grid: { color: cssVar('--chart-grid') },
           ticks: {
-            color: '#8b949e',
+            color: cssVar('--muted'),
             font: { family: "'JetBrains Mono', monospace" },
             callback: (v) => (v > 0 ? '+' : '') + v.toFixed(1)
           }
         },
         y: {
           grid: { display: false },
-          ticks: { color: '#e6edf3', font: { family: "'JetBrains Mono', monospace", size: 12 } }
+          ticks: { color: cssVar('--text'), font: { family: "'JetBrains Mono', monospace", size: 12 } }
         }
       }
     }
   });
+
+  chartRegistry.push(chart);
 }
 
 function initInputCharts() {
@@ -189,4 +203,61 @@ function initThroughputCharts() {
   renderBarChart('chart-avg-order', names, emps.map(e => e.avg_order), { prefix: '$' });
   renderBarChart('chart-customers', names, emps.map(e => e.customers));
   renderBarChart('chart-discount', names, emps.map(e => e.discount_pct), { suffix: '%', sortAsc: true });
+}
+
+function rerenderCharts() {
+  while (chartRegistry.length) {
+    chartRegistry.pop().destroy();
+  }
+  initThroughputCharts();
+  initInputCharts();
+  initCorrelationChart();
+}
+
+function initThemeToggle() {
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll('.theme-toggle__btn');
+  if (buttons.length === 0) return;
+
+  function readChoice() {
+    try {
+      const v = localStorage.getItem('theme');
+      return (v === 'light' || v === 'dark') ? v : 'system';
+    } catch (e) {
+      return 'system';
+    }
+  }
+
+  function apply(choice, { rerender = true } = {}) {
+    try {
+      if (choice === 'system') {
+        root.removeAttribute('data-theme');
+        localStorage.removeItem('theme');
+      } else {
+        root.setAttribute('data-theme', choice);
+        localStorage.setItem('theme', choice);
+      }
+    } catch (e) {
+      if (choice === 'system') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', choice);
+    }
+    buttons.forEach(b => {
+      const active = b.dataset.themeChoice === choice;
+      b.classList.toggle('theme-toggle__btn--active', active);
+      b.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+    if (rerender) rerenderCharts();
+  }
+
+  buttons.forEach(b => {
+    b.addEventListener('click', () => apply(b.dataset.themeChoice));
+  });
+
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (readChoice() === 'system') rerenderCharts();
+  });
+
+  // Sync button state on first load without tearing down charts that
+  // haven't been created yet.
+  apply(readChoice(), { rerender: false });
 }
